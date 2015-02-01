@@ -44,6 +44,12 @@ public class ConsolePageController {
         return new ModelAndView("masteredWords");
     }
 
+    @RequestMapping("interest-words")
+    protected ModelAndView interestWords(HttpServletRequest request,
+                                         HttpServletResponse response) {
+        return new ModelAndView("interestWords");
+    }
+
     @RequestMapping("new-words")
     protected ModelAndView allSessions(HttpServletRequest request,
                                        HttpServletResponse response) {

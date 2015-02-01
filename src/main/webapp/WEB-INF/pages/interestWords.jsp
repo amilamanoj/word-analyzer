@@ -3,7 +3,7 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
-<title>Word Analyzer</title>
+<title>Word Analyzer - Interest List</title>
 
 <link href="${pageContext.request.contextPath}/resources/css/trs_console.css" rel="stylesheet" type="text/css"/>
 <link href="${pageContext.request.contextPath}/resources/css/monitor_table.css" rel="stylesheet" type="text/css"/>
@@ -26,19 +26,12 @@
         $("#loadingImage").hide();
         $("#subtitle").html("Messages of Session")
     });
-    $(function () {
-        $("#refresh").button();
-    });
-
-    $(document).on("click", "#refresh", function () {
-        refreshMessages("newWords");
-    });
 
 </script>
 
 <script type="text/javascript">
 
-    var reqUrl = "newWords";
+    var reqUrl = "interestWords";
 
     $(document).ready(function () {
         var $lmTable = $("#information").dataTable({
@@ -54,12 +47,9 @@
             "aaData": [],
             "aoColumns": [
 //                { "mDataProp": "id", sDefaultContent: "n/a"},
-                { "mDataProp": "frequency", sDefaultContent: "n/a"},
-                { "mDataProp": "word", sDefaultContent: "n/a"},
-                { "mDataProp": "stem", sDefaultContent: "n/a"},
-                { "mDataProp": "partsOfSpeech", sDefaultContent: "n/a"},
                 { "mDataProp": "rank", sDefaultContent: "n/a"},
-                { "mDataProp": "variations", sDefaultContent: "n/a"},
+                { "mDataProp": "word", sDefaultContent: "n/a"},
+                { "mDataProp": "partsOfSpeech", sDefaultContent: "n/a"},
                 { "mDataProp": "remarks", sDefaultContent: "n/a"}
             ]
         });
@@ -108,27 +98,6 @@
         $('#mask').click(function () {
             $(this).hide();
             $('.window').hide();
-        });
-
-//        if mask is clicked
-        $('#masterButton').click(function () {
-            $.get("addToMastered", {word: $('#wordLabel').text()}, function (res) {
-                $('#mask').hide();
-                $('.window').hide();
-                $lmTable = $("#information").dataTable();
-                $lmTable.row('.selected').remove().draw(false);
-            });
-
-        });
-        //        if interest is clicked
-        $('#interestButton').click(function () {
-            $.get("addToInterest", {word: $('#wordLabel').text()}, function (res) {
-                $('#mask').hide();
-                $('.window').hide();
-                $lmTable = $("#information").dataTable();
-                $lmTable.row('.selected').remove().draw(false);
-            });
-
         });
 
         $(window).resize(function () {
@@ -191,13 +160,13 @@
 
     $(document).on('click', '#information tbody tr', function () {
         var aData = $lmTable.fnGetData(this);
-        $lmTable.$('tr.selected').removeClass('selected');
-        $(this).addClass('selected');
         var msgWindow = $('#dialog');
         $('#requestText').html("Loading word...");
         $('#wordLabel').html(aData.word);
+        wordLabel
         $.get("word", {word: aData.word}, function (res) {
             $('#requestText').html(res);
+
             var box = $('#boxes .window');
             //Get the window height and width
             var winH = $(window).height();
@@ -289,7 +258,6 @@
 
     <br/>
     <br/>
-    <label id="refresh">Refresh</label>
 
     <div id="message_info">
 
@@ -300,12 +268,9 @@
         <table id="information" class="display">
             <thead>
             <tr>
-                <th>FREQUENCY</th>
+                <th>RANK</th>
                 <th>WORD</th>
-                <th>STEM</th>
                 <th>PART OF SPEECH</th>
-                <th>TOP5000</th>
-                <th>VARIATIONS</th>
                 <th>REMARKS</th>
             </tr>
             </thead>
@@ -313,12 +278,9 @@
             </tbody>
             <tfoot>
             <tr class="search_bar">
-                <th><input type="text" name="search_freq" value="Search frequency" class="search_init"/></th>
-                <th><input type="text" name="search_word" value="Search word" class="search_init"/></th>
-                <th><input type="text" name="search_stm" value="Search stem" class="search_init"/></th>
-                <th><input type="text" name="search_pos" value="Search pos" class="search_init"/></th>
                 <th><input type="text" name="search_rank" value="Search rank" class="search_init"/></th>
-                <th><input type="text" name="search_var" value="Search var" class="search_init"/></th>
+                <th><input type="text" name="search_word" value="Search word" class="search_init"/></th>
+                <th><input type="text" name="search_pos" value="Search pos" class="search_init"/></th>
                 <th><input type="text" name="search_rem" value="Search rem" class="search_init"/></th>
             </tr>
             </tfoot>
@@ -338,8 +300,6 @@
                 </tr>
             </table>
             <input type="button" value="Close it" class="close"/>
-            <input type="button" value="Add to mastered" id="masterButton"/>
-            <input type="button" value="Add to interest" id="interestButton"/>
         </div>
         <!-- Mask to cover the whole screen -->
         <div id="mask"></div>

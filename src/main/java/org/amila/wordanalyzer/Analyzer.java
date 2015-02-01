@@ -29,7 +29,8 @@ public class Analyzer {
     private static final boolean ONLY_NOUNS = false;
     private static final boolean TOLOWERCASE = true;
     private static final boolean SHORTEN = true;
-    public static final String MASTERED_LIST_TXT = "D:\\Dropbox\\masteredList.txt";
+    public static final String MASTERED_LIST_TXT = "D:\\Dropbox\\masteredWordList.txt";
+    public static final String INTEREST_LIST = "D:\\Dropbox\\interestWordList.txt";
     public static final String FREQ_LIST_5000 = "D:\\Dropbox\\freq5000.csv";
     private Map<String, WordInfo> distinctWordMap = new HashMap<String, WordInfo>();
     private Map<Integer, List<WordInfo>> filteredWordMapGrouped = new TreeMap<>();
@@ -37,7 +38,9 @@ public class Analyzer {
     WiktionaryEntryFilter filter = new WiktionaryEntryFilter();
     IWiktionaryEdition wkt;
     private List<List<WordInfo>> wordInfoListGrouped;
-    private Set<String> masteredList;
+    private Set<String> knownWordList;
+    private Set<String> mastered;
+    private Set<String> interestList;
     private Map<String, Integer> frequencyList5000 = new HashMap<>();
     private List<WordInfo> nonDictionary = new ArrayList<>();
     private JobInfo jobInfo = new JobInfo();
@@ -118,10 +121,11 @@ public class Analyzer {
         }
         System.out.println("Loading mastered list");
         jobInfo.setStatus("Loading mastered list...");
-        List<String> mList = Files.readAllLines(Paths.get(this.getClass().getResource("/mastered.txt").toURI()), Charset.defaultCharset());
-        List<String> mList2 = Files.readAllLines(Paths.get(MASTERED_LIST_TXT), Charset.defaultCharset());
-        masteredList = new HashSet<>(mList);
-        masteredList.addAll(mList2);
+        interestList = new HashSet<>(Files.readAllLines(Paths.get(INTEREST_LIST), Charset.defaultCharset()));
+        mastered = new HashSet<>(Files.readAllLines(Paths.get(MASTERED_LIST_TXT), Charset.defaultCharset()));
+        knownWordList = new HashSet<>(interestList);
+
+        knownWordList.addAll(mastered);
         System.out.println("Parsing...");
         jobInfo.setStatus("Parsing...");
         text = text.replaceAll("\\r", "");
@@ -213,12 +217,12 @@ public class Analyzer {
         if (wordInfo.getWord().length() >= WORD_LENGTH && wordInfo.getFrequency() >= WORD_FREQ) {
 //            if (FILTER_BY_MASTERED) {
             String word = wordInfo.getWord();
-            if (masteredList.contains(word)) {
+            if (knownWordList.contains(word)) {
                 jobInfo.setMasteredWords(jobInfo.getMasteredWords() + 1);
                 return false;
             } else if (SHORTEN) {
                 word = Inflector.getInstance().singularize(word);// buggy, eg: perhaps returns perhap.  maybe try : http://www.dzone.com/snippets/java-inflections
-                if (masteredList.contains(word)) {
+                if (knownWordList.contains(word)) {
                     jobInfo.setMasteredWords(jobInfo.getMasteredWords() + 1);
                     return false;
                 }
@@ -228,7 +232,7 @@ public class Analyzer {
 //                stemmer.setCurrent(word);
 //                stemmer.stem();
 //                word = stemmer.getCurrent();
-                if (masteredList.contains(word)) {
+                if (knownWordList.contains(word)) {
                     jobInfo.setMasteredWords(jobInfo.getMasteredWords() + 1);
                     return false;
                 }
@@ -342,23 +346,23 @@ public class Analyzer {
         return sb.toString();
     }
 
-    public void addToMasteredList(String word) {
-        try (PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(MASTERED_LIST_TXT, true)))) {
+    public void addToList(String word, ListType listType) {
+        try (PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(getWordSetFilePath(listType), true)))) {
             out.println(word);
             out.close();
-            masteredList.add(word);
+            getWordSet(listType).add(word);
             filteredWordMap.remove(word);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public List<WordBean> getMasteredWords() {
+    public List<WordBean> getListWords(ListType listType) {
         List<WordBean> mList = new ArrayList<>();
         long id = 0;
         try {
 
-            for (String masteredWord : masteredList) {
+            for (String masteredWord : getWordSet(listType)) {
                 WordInfo wordInfo = new WordInfo();
                 wordInfo.setWord(masteredWord);
                 List<IWiktionaryEntry> entries = wkt.getEntriesForWord(masteredWord, filter);
@@ -384,5 +388,30 @@ public class Analyzer {
         return mList;
     }
 
+    public Set<String> getWordSet(ListType listType) {
+        switch (listType) {
+            case MASTERED:
+                return mastered;
+            case INTEREST:
+                return interestList;
+            default:
+                return new HashSet<>();
+        }
+    }
+    public String getWordSetFilePath(ListType listType) {
+        switch (listType) {
+            case MASTERED:
+                return MASTERED_LIST_TXT;
+            case INTEREST:
+                return INTEREST_LIST;
+            default:
+                return null;
+        }
+    }
+
+
+ public enum ListType {
+     MASTERED, INTEREST
+ }
 
 }
