@@ -7,6 +7,7 @@ import de.tudarmstadt.ukp.jwktl.api.IWiktionarySense;
 import de.tudarmstadt.ukp.jwktl.api.PartOfSpeech;
 import de.tudarmstadt.ukp.jwktl.api.entry.WikiString;
 import de.tudarmstadt.ukp.jwktl.api.filter.WiktionaryEntryFilter;
+import org.amila.wordanalyzer.lemmatizer.StanfordLemmatizer;
 import org.amila.wordanalyzer.stemmer.SnowballStemmer;
 import org.amila.wordanalyzer.stemmer.englishStemmer;
 
@@ -28,6 +29,7 @@ public class Analyzer {
     private static final boolean FILTER_BY_DICTIONARY_WORD = true;
     private static final boolean ONLY_NOUNS = false;
     private static final boolean TOLOWERCASE = true;
+    private static final boolean LEMMATIZE = true;
     private static final boolean SHORTEN = true;
     public static final String MASTERED_LIST_TXT = "D:\\Dropbox\\masteredWordList.txt";
     public static final String INTEREST_LIST = "D:\\Dropbox\\interestWordList.txt";
@@ -128,9 +130,20 @@ public class Analyzer {
         knownWordList.addAll(mastered);
         System.out.println("Parsing...");
         jobInfo.setStatus("Parsing...");
-        text = text.replaceAll("\\r", "");
+
+        String[] words;
+        if (LEMMATIZE) {
+            StanfordLemmatizer slem = new StanfordLemmatizer();
+            // getting lemma of each word. this singularize the word. makes the word present tense, etc
+            // but sometimes this does not get the base word. for example: adverbs (quietly) and some past tense (worried)
+            List<String> list = slem.lemmatize(text);
+            words = list.toArray(new String[list.size()]);
+        } else {
+            text = text.replaceAll("\\r", "");
 //        String[] words = text.split(" ");
-        String[] words = text.split("\\n+|\\s|—|-");
+            words = text.split("\\n+|\\s|—|-");
+        }
+
         jobInfo.setOriginalWords(words.length);
 //        for (String line : lines) {
 //            String[] words = line.split(" ");
@@ -221,6 +234,7 @@ public class Analyzer {
                 jobInfo.setMasteredWords(jobInfo.getMasteredWords() + 1);
                 return false;
             } else if (SHORTEN) {
+                // this should be used even with stanford lemmatizer (it doesn't return base word of some words. eg: adverbs)
                 word = Inflector.getInstance().singularize(word);// buggy, eg: perhaps returns perhap.  maybe try : http://www.dzone.com/snippets/java-inflections
                 if (knownWordList.contains(word)) {
                     jobInfo.setMasteredWords(jobInfo.getMasteredWords() + 1);
