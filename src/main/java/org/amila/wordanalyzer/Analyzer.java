@@ -17,6 +17,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.regex.Matcher;
 
 /**
  * Created by Amila on 7/27/2014.
@@ -348,8 +349,26 @@ public class Analyzer {
                 sb.append(sense.getIndex());
                 sb.append(" - ");
                 WikiString gloss = (WikiString) sense.getGloss();
-                if (!gloss.toString().isEmpty()) {
-                    sb.append(gloss);
+                String wikiText = sense.getGloss().getText();
+                String plainText = sense.getGloss().getPlainText();
+                Matcher matcher = WordInfo.TEMPLATE_PATTERN.matcher(wikiText);
+                String templateText = "";
+                if (matcher.find()) {
+                    templateText = (matcher.group(0));
+                }
+                if (templateText.contains("dated")) {
+                    sb.append("[DATED] ");
+                }
+                if (templateText.contains("archaic")) {
+                    sb.append("[ARCHAIC] ");
+                    plainText = "<s>" + plainText + "</s>";
+                }
+                if (templateText.contains("obsolete")) {
+                    sb.append("[OBSOLETE] ");
+                    plainText = "<s>" + plainText + "</s>";
+                }
+                if (!plainText.isEmpty()) {
+                    sb.append(plainText);
                 } else {
                     sb.append(gloss.getTextIncludingWikiMarkup());
                 }
