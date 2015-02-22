@@ -50,6 +50,12 @@ public class ConsolePageController {
         return new ModelAndView("interestWords");
     }
 
+    @RequestMapping("frequency-list")
+    protected ModelAndView frequencyList(HttpServletRequest request,
+                                         HttpServletResponse response) {
+        return new ModelAndView("frequencyList");
+    }
+
     @RequestMapping("new-words")
     protected ModelAndView allSessions(HttpServletRequest request,
                                        HttpServletResponse response) {

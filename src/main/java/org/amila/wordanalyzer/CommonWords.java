@@ -35,6 +35,7 @@ public class CommonWords {
             "unless",
             "now",
             "except",
+            "no",
             //NOUNS
             "time",
             "person",

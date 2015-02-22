@@ -9,8 +9,10 @@ public class WordBean {
     long frequency;
     String partsOfSpeech;
     int rank = 10000;
+    int rank100k = 1000000;
     String variations;
     String remarks = "";
+    int senses;
     String stem;
 
     public String getWord() {
@@ -76,5 +78,21 @@ public class WordBean {
 
     public void setStem(String stem) {
         this.stem = stem;
+    }
+
+    public int getRank100k() {
+        return rank100k;
+    }
+
+    public void setRank100k(int rank100k) {
+        this.rank100k = rank100k;
+    }
+
+    public int getSenses() {
+        return senses;
+    }
+
+    public void setSenses(int senses) {
+        this.senses = senses;
     }
 }

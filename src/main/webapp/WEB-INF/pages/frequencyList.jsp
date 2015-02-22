@@ -31,14 +31,14 @@
     });
 
     $(document).on("click", "#refresh", function () {
-        refreshMessages("newWords");
+        refreshMessages("frequencyList");
     });
 
 </script>
 
 <script type="text/javascript">
 
-    var reqUrl = "newWords";
+    var reqUrl = "frequencyList";
 
     $(document).ready(function () {
         var $lmTable = $("#information").dataTable({
@@ -54,12 +54,11 @@
             "aaData": [],
             "aoColumns": [
 //                { "mDataProp": "id", sDefaultContent: "n/a"},
-                { "mDataProp": "frequency", sDefaultContent: "n/a"},
+                { "mDataProp": "rank", sDefaultContent: "n/a"},
                 { "mDataProp": "word", sDefaultContent: "n/a"},
                 { "mDataProp": "stem", sDefaultContent: "n/a"},
                 { "mDataProp": "partsOfSpeech", sDefaultContent: "n/a"},
                 { "mDataProp": "senses", sDefaultContent: "n/a"},
-                { "mDataProp": "rank100k", sDefaultContent: "n/a"},
                 { "mDataProp": "variations", sDefaultContent: "n/a"},
                 { "mDataProp": "remarks", sDefaultContent: "n/a"}
             ]
@@ -301,12 +300,11 @@
         <table id="information" class="display">
             <thead>
             <tr>
-                <th>FREQUENCY</th>
+                <th>RANK: NORVIG</th>
                 <th>WORD</th>
                 <th>STEM</th>
                 <th>PART OF SPEECH</th>
                 <th>SENSES</th>
-                <th>TOP100K NORVIG</th>
                 <th>VARIATIONS</th>
                 <th>REMARKS</th>
             </tr>
@@ -315,12 +313,11 @@
             </tbody>
             <tfoot>
             <tr class="search_bar">
-                <th><input type="text" name="search_freq" value="Search frequency" class="search_init"/></th>
+                <th><input type="text" name="search_rank100" value="Search rank100" class="search_init"/></th>
                 <th><input type="text" name="search_word" value="Search word" class="search_init"/></th>
                 <th><input type="text" name="search_stm" value="Search stem" class="search_init"/></th>
                 <th><input type="text" name="search_pos" value="Search pos" class="search_init"/></th>
                 <th><input type="text" name="search_senses" value="Search senses" class="search_init"/></th>
-                <th><input type="text" name="search_rank100" value="Search rank100" class="search_init"/></th>
                 <th><input type="text" name="search_var" value="Search var" class="search_init"/></th>
                 <th><input type="text" name="search_rem" value="Search rem" class="search_init"/></th>
             </tr>

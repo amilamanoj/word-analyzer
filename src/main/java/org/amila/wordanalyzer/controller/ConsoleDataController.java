@@ -100,8 +100,9 @@ public class ConsoleDataController {
     String masteredWords(HttpSession session) {
 
         Analyzer analyzer = (Analyzer) session.getAttribute("analyzer");
-        return gson.toJson(analyzer.getListWords(Analyzer.ListType.MASTERED));
+        return gson.toJson(analyzer.getListWords(Analyzer.ListType.MASTERED, false));
     }
+
     @RequestMapping(value = "interestWords", method = RequestMethod.GET,
             produces = "application/json; charset=utf-8")
     public
@@ -109,7 +110,16 @@ public class ConsoleDataController {
     String interestWords(HttpSession session) {
 
         Analyzer analyzer = (Analyzer) session.getAttribute("analyzer");
-        return gson.toJson(analyzer.getListWords(Analyzer.ListType.INTEREST));
+        return gson.toJson(analyzer.getListWords(Analyzer.ListType.INTEREST, false));
+    }
+    @RequestMapping(value = "frequencyList", method = RequestMethod.GET,
+            produces = "application/json; charset=utf-8")
+    public
+    @ResponseBody
+    String frequencyList(HttpSession session) {
+
+        Analyzer analyzer = (Analyzer) session.getAttribute("analyzer");
+        return gson.toJson(analyzer.getListWords(Analyzer.ListType.TOP5K, true));
     }
 
     @RequestMapping(value = "word", method = RequestMethod.GET,
