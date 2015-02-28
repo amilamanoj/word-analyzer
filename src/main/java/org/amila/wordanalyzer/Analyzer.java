@@ -458,6 +458,14 @@ public class Analyzer {
                     } else if (interestList.contains(word)) {
                         bean.setRemarks("Interest");
                     }
+                    String wordSin = Inflector.getInstance().singularize(word);
+                    if (CommonWords.WORDS.contains(wordSin)) {
+                        bean.setRemarks("Common");
+                    } else if (mastered.contains(wordSin)) {
+                        bean.setRemarks("Mastered");
+                    } else if (interestList.contains(wordSin)) {
+                        bean.setRemarks("Interest");
+                    }
                 }
                 mList.add(bean);
             }
