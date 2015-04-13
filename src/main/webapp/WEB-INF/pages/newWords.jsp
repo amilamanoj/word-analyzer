@@ -59,6 +59,7 @@
                 { "mDataProp": "stem", sDefaultContent: "n/a"},
                 { "mDataProp": "partsOfSpeech", sDefaultContent: "n/a"},
                 { "mDataProp": "senses", sDefaultContent: "n/a"},
+                { "mDataProp": "size", sDefaultContent: "n/a"},
                 { "mDataProp": "rank100k", sDefaultContent: "n/a"},
                 { "mDataProp": "variations", sDefaultContent: "n/a"},
                 { "mDataProp": "remarks", sDefaultContent: "n/a"}
@@ -306,6 +307,7 @@
                 <th>STEM</th>
                 <th>PART OF SPEECH</th>
                 <th>SENSES</th>
+                <th>LENGTH</th>
                 <th>TOP100K NORVIG</th>
                 <th>VARIATIONS</th>
                 <th>REMARKS</th>
@@ -320,6 +322,7 @@
                 <th><input type="text" name="search_stm" value="Search stem" class="search_init"/></th>
                 <th><input type="text" name="search_pos" value="Search pos" class="search_init"/></th>
                 <th><input type="text" name="search_senses" value="Search senses" class="search_init"/></th>
+                <th><input type="text" name="search_size" value="Search size" class="search_init"/></th>
                 <th><input type="text" name="search_rank100" value="Search rank100" class="search_init"/></th>
                 <th><input type="text" name="search_var" value="Search var" class="search_init"/></th>
                 <th><input type="text" name="search_rem" value="Search rem" class="search_init"/></th>

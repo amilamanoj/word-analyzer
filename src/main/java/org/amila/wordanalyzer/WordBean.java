@@ -13,6 +13,7 @@ public class WordBean {
     String variations;
     String remarks = "";
     int senses;
+    int size;
     String stem;
 
     public String getWord() {
@@ -94,5 +95,13 @@ public class WordBean {
 
     public void setSenses(int senses) {
         this.senses = senses;
+    }
+
+    public int getSize() {
+        return size;
+    }
+
+    public void setSize(int size) {
+        this.size = size;
     }
 }

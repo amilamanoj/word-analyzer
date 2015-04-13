@@ -32,10 +32,12 @@ public class Analyzer {
     private static final boolean TOLOWERCASE = true;
     private static final boolean LEMMATIZE = true;
     private static final boolean SHORTEN = true;
-    public static final String MASTERED_LIST_TXT = "D:\\DB\\Dropbox\\masteredWordList.txt";
-    public static final String INTEREST_LIST = "D:\\DB\\Dropbox\\interestWordList.txt";
-//    public static final String FREQ_LIST_5000 = "D:\\Dropbox\\freq5000.csv";
-    public static final String FREQ_LIST_100k = "D:\\Dropbox\\top100k.txt";
+    public static final String DEFAULT_FILE_LOC = "D:\\DB\\Dropbox\\";
+    public static final String MASTERED_LIST_TXT = "masteredWordList.txt";
+    public static final String INTEREST_LIST = "interestWordList.txt";
+//    public static final String FREQ_LIST_5000 = "freq5000.csv";
+    public static final String FREQ_LIST_100k = "top100k.txt";
+    private static final String WIKTIONARY_DUMP = "D:\\WikitionaryDumpEn\\WikitionaryParsed";
     private Map<String, WordInfo> distinctWordMap = new HashMap<String, WordInfo>();
     private Map<Integer, List<WordInfo>> filteredWordMapGrouped = new TreeMap<>();
     private Map<String, WordInfo> filteredWordMap = new HashMap<>();
@@ -55,22 +57,10 @@ public class Analyzer {
 
     public static void main(String[] args) throws IOException, URISyntaxException {
 //        String file = "./The Two Towers - J. R. R. Tolkien.txt";
-//        String file = "The Fellowship of the Ring - J. R. R. Tolkien.txt";
-//        String file = "./The Return of the King - J. R. R. Tolkien.txt";
-//        String file = "books/Space Chronicles_ Facing the Ul - Neil Degrasse Tyson.txt";
-//        String file = "Maps of Time_ An Introduction t - David Christian.txt";
-//        String file = "books/Rendezvous With Rama - Arthur C. Clarke.txt";
-//        String file = "The Alchemist - Ben Jonson.txt";
-//        String file = "Pride and Prejudice - Jane Austen.txt";
-//        String file = "Adventures of Huckleberry Finn - Mark Twain.txt";
-//        String file = "books/The Yellow Wallpaper - Charlotte Perkins Gilman.txt";
-//        String file = "timeMachine.txt";
-//        String file = "books/The Hobbit_ Or There and Back A - J. R. R. Tolkien.txt";
 //        System.out.println("Reading file...");
 //        byte[] bytes = Files.readAllBytes(Paths.get(file));
 //        String text = new String(bytes);
 //        Analyzer analyzer = new Analyzer();
-//        analyzer.initialize(file, text);
 //        analyzer.analyze();
 
         Analyzer analyzer = new Analyzer();
@@ -87,31 +77,11 @@ public class Analyzer {
 
     }
 
-    public Analyzer() {
-//        List<IWiktionaryEntry> entries = wkt.getEntriesForWord("whither", filter);
-//        System.out.println(entries);
-//        IWiktionaryPage page = wkt.getPageForWord("whither");
-//        System.out.println(page);
-//        IWiktionaryIterator<IWiktionaryEntry> itr = wkt.getAllEntries();
-//        while (itr.hasNext()) {
-//            IWiktionaryEntry entry = itr.next();
-//            if (entry.getPartOfSpeech() == PartOfSpeech.PROPER_NOUN && entry.getWordLanguage() == Language.ENGLISH) {
-//                System.out.println(entry);
-//            }
-//        }
-        if (!initialized) {
-            System.out.println("Loading Wiktionary...");
-            wkt = JWKTL.openEdition(new File("D:\\WikitionaryDumpEn\\WikitionaryParsed"));
-            System.out.println("Finished loading Wiktionary");
-        }
-    }
-
     public void initialize(String title, String text) {
 //        filter.setAllowedWordLanguages(Language.ENGLISH);
 //        filter.setAllowedWordLanguages();
         jobInfo.setTitle(title);
         this.text = text;
-        initialized = true;
     }
 
     public void analyzeAsync() {
@@ -121,9 +91,7 @@ public class Analyzer {
             public void run() {
                 try {
                     analyze();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (URISyntaxException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
@@ -131,29 +99,9 @@ public class Analyzer {
     }
 
     public void analyze() throws IOException, URISyntaxException {
-        System.out.println("Loading frequency list...");
-//        List<String> freqList = Files.readAllLines(Paths.get(FREQ_LIST_5000), Charset.defaultCharset());
-//        for (String freqEntry : freqList) {
-//            String[] freqs = freqEntry.split(",");
-//            frequencyList5000.put(freqs[1], Integer.parseInt(freqs[0]));
-//        }
-        List<String> top100k = Files.readAllLines(Paths.get(FREQ_LIST_100k), Charset.defaultCharset());
-        int x=0;
-        for (String freqEntry : top100k) {
-            x++;
-            String[] freqs = freqEntry.split("\t");
-            frequencyList100k.put(freqs[0], x);
-            if (x<=5000) {
-                frequencyList5k.put(freqs[0], x);
-            }
+        if (!initialized) {
+            initialize();
         }
-        System.out.println("Loading mastered list");
-        jobInfo.setStatus("Loading mastered list...");
-        interestList = new HashSet<>(Files.readAllLines(Paths.get(INTEREST_LIST), Charset.defaultCharset()));
-        mastered = new HashSet<>(Files.readAllLines(Paths.get(MASTERED_LIST_TXT), Charset.defaultCharset()));
-        knownWordList = new HashSet<>(interestList);
-
-        knownWordList.addAll(mastered);
         System.out.println("Parsing...");
         jobInfo.setStatus("Parsing...");
 
@@ -161,7 +109,7 @@ public class Analyzer {
         if (LEMMATIZE) {
             StanfordLemmatizer slem = new StanfordLemmatizer();
             // getting lemma of each word. this singularize the word. makes the word present tense, etc
-            // but sometimes this does not get the base word. for example: adverbs (quietly) and some past tense (worried)
+            // sometimes this does not get the base word. for example: adverbs (quietly) and some past tense (worried)
             List<String> list = slem.lemmatize(text);
             words = list.toArray(new String[list.size()]);
         } else {
@@ -246,6 +194,30 @@ public class Analyzer {
 
         System.out.println(jobInfo);
         jobInfo.setStatusCode(2);
+    }
+
+    private void initialize() throws IOException {
+        System.out.println("Loading Wiktionary...");
+        jobInfo.setStatus("Loading Wiktionary...");
+        wkt = JWKTL.openEdition(new File(WIKTIONARY_DUMP));
+        System.out.println("Finished loading Wiktionary");
+        jobInfo.setStatus("Loading lists...");
+        List<String> top100k = Files.readAllLines(Paths.get(getWordSetFilePath(ListType.TOP100K)), Charset.defaultCharset());
+        int x=0;
+        for (String freqEntry : top100k) {
+            x++;
+            String[] freqs = freqEntry.split("\t");
+            frequencyList100k.put(freqs[0], x);
+            if (x<=5000) {
+                frequencyList5k.put(freqs[0], x);
+            }
+        }
+        System.out.println("Loading mastered list");
+        interestList = new HashSet<>(Files.readAllLines(Paths.get(getWordSetFilePath(ListType.INTEREST)), Charset.defaultCharset()));
+        mastered = new HashSet<>(Files.readAllLines(Paths.get(getWordSetFilePath(ListType.MASTERED)), Charset.defaultCharset()));
+        knownWordList = new HashSet<>(interestList);
+        knownWordList.addAll(mastered);
+        initialized = true;
     }
 
     public JobInfo getJobInfo() {
@@ -345,11 +317,7 @@ public class Analyzer {
             bean.setVariations(info.getVariations().toString());
             bean.setStem(info.getStem());
             bean.setSenses(info.getTotalSenses());
-
-//            Integer rank = frequencyList5000.get(bean.getWord());
-//            if (rank != null && rank > 0) {
-//                bean.setRank(rank);
-//            }
+            bean.setSize(info.getWord().length());
             Integer rank100k = frequencyList100k.get(bean.getWord());
             if (rank100k != null && rank100k > 0) {
                 bean.setRank100k(rank100k);
@@ -442,9 +410,6 @@ public class Analyzer {
                 bean.setId(id++);
                 bean.setWord(wordInfo.getWord());
                 bean.setPartsOfSpeech(wordInfo.getPartOfSpeechCommaSeparated());
-//                if (wordInfo.getTotalSenses() > 10) {
-//                    bean.setRemarks(bean.getRemarks() + "10+ Senses");
-//                }
                 bean.setSenses(wordInfo.getTotalSenses());
                 Integer rank = frequencyList100k.get(word);
                 if (rank != null && rank > 0) {
@@ -494,9 +459,11 @@ public class Analyzer {
     public String getWordSetFilePath(ListType listType) {
         switch (listType) {
             case MASTERED:
-                return MASTERED_LIST_TXT;
+                return DEFAULT_FILE_LOC + MASTERED_LIST_TXT;
             case INTEREST:
-                return INTEREST_LIST;
+                return DEFAULT_FILE_LOC + INTEREST_LIST;
+            case TOP100K:
+                return DEFAULT_FILE_LOC + FREQ_LIST_100k;
             default:
                 return null;
         }
@@ -523,7 +490,7 @@ public class Analyzer {
 
 
  public enum ListType {
-     MASTERED, INTEREST, TOP5K
+     MASTERED, INTEREST, TOP5K, TOP100K
  }
 
 }
