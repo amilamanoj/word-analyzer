@@ -267,6 +267,11 @@ public class Analyzer {
                     return false;
                 }
                 wordInfo.processEntries(entries);
+                if (wordInfo.getTotalSenses() == 0) {
+                    nonDictionary.add(wordInfo);
+                    jobInfo.setNonDictionaryWords(jobInfo.getNonDictionaryWords() + 1);
+                    return false;
+                }
             }
 
             if (ONLY_NOUNS) {
