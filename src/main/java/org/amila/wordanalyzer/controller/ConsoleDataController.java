@@ -35,9 +35,8 @@ public class ConsoleDataController {
             try {
                 byte[] bytes = file.getBytes();
                 String text = new String(bytes);
-                Analyzer analyzer = new Analyzer();
+                Analyzer analyzer = new Analyzer(file.getOriginalFilename(), text);
                 session.setAttribute("analyzer", analyzer);
-                analyzer.initialize(file.getOriginalFilename(), text);
                 ModelAndView view = new ModelAndView("ready");
                 view.addObject("title", file.getOriginalFilename());
 //                return "You successfully uploaded " + name + " into " + name + "-uploaded !";

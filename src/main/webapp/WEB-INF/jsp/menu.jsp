@@ -9,12 +9,10 @@
     <nav>
         <ul>
             <li><a href="home">Overview</a></li>
-            <li><a href="environment">Environment</a></li>
             <li><a href="new-words">New Words</a></li>
             <li><a href="mastered-words">Mastered Words</a></li>
             <li><a href="interest-words">Interest Words</a></li>
             <li><a href="frequency-list">Frequency List</a></li>
-            <li><a href="all-messages">All Messages</a></li>
             <li><a href="log">Logs</a></li>
         </ul>
     </nav>

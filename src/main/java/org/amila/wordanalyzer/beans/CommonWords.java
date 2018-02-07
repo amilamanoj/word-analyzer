@@ -1,4 +1,4 @@
-package org.amila.wordanalyzer;
+package org.amila.wordanalyzer.beans;
 
 import java.util.Arrays;
 import java.util.List;

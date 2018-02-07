@@ -1,4 +1,4 @@
-package org.amila.wordanalyzer;
+package org.amila.wordanalyzer.beans;
 
 import de.tudarmstadt.ukp.jwktl.api.IWiktionaryEntry;
 

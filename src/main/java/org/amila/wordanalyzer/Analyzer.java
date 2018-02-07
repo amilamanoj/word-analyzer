@@ -7,15 +7,14 @@ import de.tudarmstadt.ukp.jwktl.api.IWiktionarySense;
 import de.tudarmstadt.ukp.jwktl.api.PartOfSpeech;
 import de.tudarmstadt.ukp.jwktl.api.entry.WikiString;
 import de.tudarmstadt.ukp.jwktl.api.filter.WiktionaryEntryFilter;
-import org.amila.wordanalyzer.lemmatizer.StanfordLemmatizer;
-import org.amila.wordanalyzer.stemmer.SnowballStemmer;
-import org.amila.wordanalyzer.stemmer.englishStemmer;
+import de.tudarmstadt.ukp.jwktl.api.util.ILanguage;
+import de.tudarmstadt.ukp.jwktl.api.util.Language;
+import org.amila.wordanalyzer.beans.*;
+import org.amila.wordanalyzer.nlp.Inflector;
+import org.amila.wordanalyzer.nlp.StanfordLemmatizer;
 
 import java.io.*;
 import java.net.URISyntaxException;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.regex.Matcher;
 
@@ -32,12 +31,12 @@ public class Analyzer {
     private static final boolean TOLOWERCASE = true;
     private static final boolean LEMMATIZE = true;
     private static final boolean SHORTEN = true;
-    public static final String DEFAULT_FILE_LOC = "D:\\DB\\Dropbox\\";
+    private  String defaultFileLoc;
     public static final String MASTERED_LIST_TXT = "masteredWordList.txt";
     public static final String INTEREST_LIST = "interestWordList.txt";
 //    public static final String FREQ_LIST_5000 = "freq5000.csv";
     public static final String FREQ_LIST_100k = "top100k.txt";
-    private static final String WIKTIONARY_DUMP = "D:\\WikitionaryDumpEn\\WikitionaryParsed";
+    private String wiktionaryDump;
     private Map<String, WordInfo> distinctWordMap = new HashMap<String, WordInfo>();
     private Map<Integer, List<WordInfo>> filteredWordMapGrouped = new TreeMap<>();
     private Map<String, WordInfo> filteredWordMap = new HashMap<>();
@@ -53,33 +52,36 @@ public class Analyzer {
     private JobInfo jobInfo = new JobInfo();
     private String text;
     private boolean initialized;
-    SnowballStemmer stemmer = new englishStemmer();
+    private ILanguage language;
 
-    public static void main(String[] args) throws IOException, URISyntaxException {
-//        String file = "./The Two Towers - J. R. R. Tolkien.txt";
-//        System.out.println("Reading file...");
-//        byte[] bytes = Files.readAllBytes(Paths.get(file));
-//        String text = new String(bytes);
+//    public static void main(String[] args) throws IOException {
+////        String file = "./The Two Towers - J. R. R. Tolkien.txt";
+////        System.out.println("Reading file...");
+////        byte[] bytes = Files.readAllBytes(Paths.get(file));
+////        String text = new String(bytes);
+////        Analyzer analyzer = new Analyzer();
+////        analyzer.analyze();
+//
 //        Analyzer analyzer = new Analyzer();
-//        analyzer.analyze();
+//        List<String> inp = Files.readAllLines(Paths.get("D:\\WordAnalyzer\\count_1w.txt"), Charset.defaultCharset());
+//        List<String> out = analyzer.filterDictionaryWords(inp);
+//        System.out.println(out.size());
+//        PrintWriter outW = new PrintWriter("D:\\WordAnalyzer\\out.txt");
+//
+//        for (String w : out) {
+//            outW.append(w + System.lineSeparator() );
+//        }
+//        outW.close();
+////            Files.write(, out, Charset.defaultCharset(), null);
+//
+//    }
 
-        Analyzer analyzer = new Analyzer();
-        List<String> inp = Files.readAllLines(Paths.get("D:\\WordAnalyzer\\count_1w.txt"), Charset.defaultCharset());
-        List<String> out = analyzer.filterDictionaryWords(inp);
-        System.out.println(out.size());
-        PrintWriter outW = new PrintWriter("D:\\WordAnalyzer\\out.txt");
-
-        for (String w : out) {
-            outW.append(w + System.lineSeparator() );
-        }
-        outW.close();
-//            Files.write(, out, Charset.defaultCharset(), null);
-
-    }
-
-    public void initialize(String title, String text) {
-//        filter.setAllowedWordLanguages(Language.ENGLISH);
-//        filter.setAllowedWordLanguages();
+    public Analyzer(String title, String text) throws IOException {
+        Properties properties = new Properties();
+        properties.load(this.getClass().getResourceAsStream("/application.properties"));
+        defaultFileLoc = properties.getProperty("file.location");
+        wiktionaryDump = properties.getProperty("wiktionary.dump");
+        language = Language.get(properties.getProperty("language"));
         jobInfo.setTitle(title);
         this.text = text;
     }
@@ -133,7 +135,7 @@ public class Analyzer {
 
             WordInfo wordInfo = distinctWordMap.get(tWord);
             if (wordInfo == null) {
-                wordInfo = new WordInfo();
+                wordInfo = new WordInfo(language);
                 wordInfo.setWord(tWord);
                 wordInfo.setFrequency(1);
                 wordInfo.getVariations().add(word);
@@ -199,10 +201,10 @@ public class Analyzer {
     private void initialize() throws IOException {
         System.out.println("Loading Wiktionary...");
         jobInfo.setStatus("Loading Wiktionary...");
-        wkt = JWKTL.openEdition(new File(WIKTIONARY_DUMP));
+        wkt = JWKTL.openEdition(new File(wiktionaryDump));
         System.out.println("Finished loading Wiktionary");
         jobInfo.setStatus("Loading lists...");
-        List<String> top100k = Files.readAllLines(Paths.get(getWordSetFilePath(ListType.TOP100K)), Charset.defaultCharset());
+        List<String> top100k = new ArrayList<>(); //Files.readAllLines(Paths.get(getWordSetFilePath(ListType.TOP100K)), Charset.defaultCharset());
         int x=0;
         for (String freqEntry : top100k) {
             x++;
@@ -213,8 +215,8 @@ public class Analyzer {
             }
         }
         System.out.println("Loading mastered list");
-        interestList = new HashSet<>(Files.readAllLines(Paths.get(getWordSetFilePath(ListType.INTEREST)), Charset.defaultCharset()));
-        mastered = new HashSet<>(Files.readAllLines(Paths.get(getWordSetFilePath(ListType.MASTERED)), Charset.defaultCharset()));
+        interestList = new HashSet<>();//(Files.readAllLines(Paths.get(getWordSetFilePath(ListType.INTEREST)), Charset.defaultCharset()));
+        mastered = new HashSet<>();//(Files.readAllLines(Paths.get(getWordSetFilePath(ListType.MASTERED)), Charset.defaultCharset()));
         knownWordList = new HashSet<>(interestList);
         knownWordList.addAll(mastered);
         initialized = true;
@@ -239,11 +241,11 @@ public class Analyzer {
                     return false;
                 }
                 // my simple shortener
-                word = shortenWord(word);
-                // snowball stemmer
-//                stemmer.setCurrent(word);
-//                stemmer.stem();
-//                word = stemmer.getCurrent();
+                //word = shortenWord(word);
+                // snowball nlp
+//                nlp.setCurrent(word);
+//                nlp.stem();
+//                word = nlp.getCurrent();
                 if (knownWordList.contains(word)) {
                     jobInfo.setMasteredWords(jobInfo.getMasteredWords() + 1);
                     return false;
@@ -338,7 +340,7 @@ public class Analyzer {
         if (wordInfo == null) {
             List<IWiktionaryEntry> entries = wkt.getEntriesForWord(word, filter);
             if (entries != null) {
-                wordInfo = new WordInfo();
+                wordInfo = new WordInfo(language);
                 wordInfo.setWord(word);
                 wordInfo.processEntries(entries);
             } else {
@@ -405,7 +407,7 @@ public class Analyzer {
                 if (word.length() < WORD_LENGTH) {
                     continue;
                 }
-                WordInfo wordInfo = new WordInfo();
+                WordInfo wordInfo = new WordInfo(language);
                 wordInfo.setWord(word);
                 List<IWiktionaryEntry> entries = wkt.getEntriesForWord(word, filter);
                 if (entries != null) {
@@ -464,11 +466,11 @@ public class Analyzer {
     public String getWordSetFilePath(ListType listType) {
         switch (listType) {
             case MASTERED:
-                return DEFAULT_FILE_LOC + MASTERED_LIST_TXT;
+                return defaultFileLoc + MASTERED_LIST_TXT;
             case INTEREST:
-                return DEFAULT_FILE_LOC + INTEREST_LIST;
+                return defaultFileLoc + INTEREST_LIST;
             case TOP100K:
-                return DEFAULT_FILE_LOC + FREQ_LIST_100k;
+                return defaultFileLoc + FREQ_LIST_100k;
             default:
                 return null;
         }

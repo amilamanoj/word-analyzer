@@ -1,4 +1,4 @@
-package org.amila.wordanalyzer;
+package org.amila.wordanalyzer.nlp;
 
 /*
  * JBoss DNA (http://www.jboss.org/dna)
@@ -155,10 +155,10 @@ public class Inflector {
         return wordStr;
     }
 
-    public static void main(String[] args) {
-        String word = Inflector.getInstance().singularize("verifies");// buggy, eg: perhaps returns perhap.  maybe try : http://www.dzone.com/snippets/java-inflections
-        System.out.println(word);
-    }
+//    public static void main(String[] args) {
+//        String word = Inflector.getInstance().singularize("verifies");// buggy, eg: perhaps returns perhap.  maybe try : http://www.dzone.com/snippets/java-inflections
+//        System.out.println(word);
+//    }
 
     public String pluralize(Object word,
                             int count) {

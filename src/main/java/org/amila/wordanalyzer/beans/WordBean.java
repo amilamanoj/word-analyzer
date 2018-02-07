@@ -1,4 +1,4 @@
-package org.amila.wordanalyzer;
+package org.amila.wordanalyzer.beans;
 
 /**
  * Created by Amila on 11/6/2014.

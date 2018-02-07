@@ -1,4 +1,4 @@
-package org.amila.wordanalyzer.lemmatizer;
+package org.amila.wordanalyzer.nlp;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -61,12 +61,9 @@ public class StanfordLemmatizer {
         return lemmas;
     }
 
-
-    public static void main(String[] args) {
-        System.out.println("Starting Stanford Lemmatizer");
-        String text = "quietly";
-        StanfordLemmatizer slem = new StanfordLemmatizer();
-        System.out.println(slem.lemmatize(text));
-    }
+//    public static void main(String[] args) {
+//        StanfordLemmatizer slem = new StanfordLemmatizer();
+//        System.out.println(slem.lemmatize("quietly"));
+//    }
 
 }

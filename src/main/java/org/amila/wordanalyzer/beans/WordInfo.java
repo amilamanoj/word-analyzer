@@ -1,8 +1,9 @@
-package org.amila.wordanalyzer;
+package org.amila.wordanalyzer.beans;
 
 import de.tudarmstadt.ukp.jwktl.api.IWiktionaryEntry;
 import de.tudarmstadt.ukp.jwktl.api.IWiktionarySense;
 import de.tudarmstadt.ukp.jwktl.api.PartOfSpeech;
+import de.tudarmstadt.ukp.jwktl.api.util.ILanguage;
 import de.tudarmstadt.ukp.jwktl.api.util.Language;
 
 import java.util.*;
@@ -19,9 +20,14 @@ public class WordInfo {
     private List<WordEntry> entryList = new ArrayList<>();
     private Set<PartOfSpeech> partOfSpeechSet = new HashSet<>();
     //    protected static final Pattern TEMPLATE_PATTERN = Pattern.compile("\\{\\{.+?\\}\\}");
-    protected static final Pattern TEMPLATE_PATTERN = Pattern.compile("\\{\\{.*?\\}\\}");
+    public static final Pattern TEMPLATE_PATTERN = Pattern.compile("\\{\\{.*?\\}\\}");
     private int totalSenses = 0;
     private String stem;
+    private ILanguage language;
+
+    public WordInfo(ILanguage language) {
+        this.language = language;
+    }
 
     public String getWord() {
         return word;
@@ -65,7 +71,7 @@ public class WordInfo {
 
     public void processEntries(List<IWiktionaryEntry> entries) {
         for (IWiktionaryEntry entry : entries) {
-            if (entry.getWordLanguage() != Language.ENGLISH) {
+            if (entry.getWordLanguage() != language) {
                 continue;
             }
             if (entry.getPartOfSpeech() != null) {
