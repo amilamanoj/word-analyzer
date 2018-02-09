@@ -1,20 +1,14 @@
-<%--@author AmilaS--%>
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
 <title>Word Analyzer</title>
 
-<link href="${pageContext.request.contextPath}/resources/css/trs_console.css" rel="stylesheet" type="text/css"/>
-<link href="${pageContext.request.contextPath}/resources/css/monitor_table.css" rel="stylesheet" type="text/css"/>
-<link href="${pageContext.request.contextPath}/resources/css/jquery-ui-1.8.4.custom.css" rel="stylesheet"
-      type="text/css" media="all"/>
+    <link type="text/css" href="css/trs_console.css" rel="stylesheet"/>
+    <script type="text/javascript" src="webjars/jquery/2.2.4/jquery.min.js"></script>
 
-<script type="text/javascript" src="${pageContext.request.contextPath}/resources/js/jquery-1.10.2.min.js"></script>
 <script type="text/javascript" src="${pageContext.request.contextPath}/resources/js/jquery.dataTables.min.js"></script>
-<script type="text/javascript" src="${pageContext.request.contextPath}/resources/js/jquery-ui.min.js"></script>
 
-<script src="${pageContext.request.contextPath}/resources/js/jquery.jpanelmenu.min.js" type="text/javascript"></script>
 
 <script type="text/javascript">
     $(document).ready(function () {
@@ -26,12 +20,19 @@
         $("#loadingImage").hide();
         $("#subtitle").html("Messages of Session")
     });
+    $(function () {
+        $("#refresh").button();
+    });
+
+    $(document).on("click", "#refresh", function () {
+        refreshMessages("newWords");
+    });
 
 </script>
 
 <script type="text/javascript">
 
-    var reqUrl = "masteredWords";
+    var reqUrl = "newWords";
 
     $(document).ready(function () {
         var $lmTable = $("#information").dataTable({
@@ -47,9 +48,14 @@
             "aaData": [],
             "aoColumns": [
 //                { "mDataProp": "id", sDefaultContent: "n/a"},
-                { "mDataProp": "rank", sDefaultContent: "n/a"},
+                { "mDataProp": "frequency", sDefaultContent: "n/a"},
                 { "mDataProp": "word", sDefaultContent: "n/a"},
+                { "mDataProp": "stem", sDefaultContent: "n/a"},
                 { "mDataProp": "partsOfSpeech", sDefaultContent: "n/a"},
+                { "mDataProp": "senses", sDefaultContent: "n/a"},
+                { "mDataProp": "size", sDefaultContent: "n/a"},
+                { "mDataProp": "rank100k", sDefaultContent: "n/a"},
+                { "mDataProp": "variations", sDefaultContent: "n/a"},
                 { "mDataProp": "remarks", sDefaultContent: "n/a"}
             ]
         });
@@ -98,6 +104,27 @@
         $('#mask').click(function () {
             $(this).hide();
             $('.window').hide();
+        });
+
+//        if mask is clicked
+        $('#masterButton').click(function () {
+            $.get("addToMastered", {word: $('#wordLabel').text()}, function (res) {
+                $('#mask').hide();
+                $('.window').hide();
+                $lmTable = $("#information").dataTable();
+                $lmTable.row('.selected').remove().draw(false);
+            });
+
+        });
+        //        if interest is clicked
+        $('#interestButton').click(function () {
+            $.get("addToInterest", {word: $('#wordLabel').text()}, function (res) {
+                $('#mask').hide();
+                $('.window').hide();
+                $lmTable = $("#information").dataTable();
+                $lmTable.row('.selected').remove().draw(false);
+            });
+
         });
 
         $(window).resize(function () {
@@ -160,13 +187,13 @@
 
     $(document).on('click', '#information tbody tr', function () {
         var aData = $lmTable.fnGetData(this);
+        $lmTable.$('tr.selected').removeClass('selected');
+        $(this).addClass('selected');
         var msgWindow = $('#dialog');
         $('#requestText').html("Loading word...");
         $('#wordLabel').html(aData.word);
-        wordLabel
         $.get("word", {word: aData.word}, function (res) {
             $('#requestText').html(res);
-
             var box = $('#boxes .window');
             //Get the window height and width
             var winH = $(window).height();
@@ -252,12 +279,11 @@
 </head>
 <body id="messages_body">
 
-<%@include file="menu.jsp" %>
-
 <div class="content" id="container" style="width: 98%; margin: auto">
 
     <br/>
     <br/>
+    <label id="refresh">Refresh</label>
 
     <div id="message_info">
 
@@ -268,9 +294,14 @@
         <table id="information" class="display">
             <thead>
             <tr>
-                <th>RANK</th>
+                <th>FREQUENCY</th>
                 <th>WORD</th>
+                <th>STEM</th>
                 <th>PART OF SPEECH</th>
+                <th>SENSES</th>
+                <th>LENGTH</th>
+                <th>TOP100K NORVIG</th>
+                <th>VARIATIONS</th>
                 <th>REMARKS</th>
             </tr>
             </thead>
@@ -278,9 +309,14 @@
             </tbody>
             <tfoot>
             <tr class="search_bar">
-                <th><input type="text" name="search_rank" value="Search rank" class="search_init"/></th>
+                <th><input type="text" name="search_freq" value="Search frequency" class="search_init"/></th>
                 <th><input type="text" name="search_word" value="Search word" class="search_init"/></th>
+                <th><input type="text" name="search_stm" value="Search stem" class="search_init"/></th>
                 <th><input type="text" name="search_pos" value="Search pos" class="search_init"/></th>
+                <th><input type="text" name="search_senses" value="Search senses" class="search_init"/></th>
+                <th><input type="text" name="search_size" value="Search size" class="search_init"/></th>
+                <th><input type="text" name="search_rank100" value="Search rank100" class="search_init"/></th>
+                <th><input type="text" name="search_var" value="Search var" class="search_init"/></th>
                 <th><input type="text" name="search_rem" value="Search rem" class="search_init"/></th>
             </tr>
             </tfoot>
@@ -300,6 +336,8 @@
                 </tr>
             </table>
             <input type="button" value="Close it" class="close"/>
+            <input type="button" value="Add to mastered" id="masterButton"/>
+            <input type="button" value="Add to interest" id="interestButton"/>
         </div>
         <!-- Mask to cover the whole screen -->
         <div id="mask"></div>

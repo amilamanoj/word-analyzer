@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <title>Word Analyzer</title>
+
+    <link type="text/css" href="css/trs_console.css" rel="stylesheet"/>
+    <script type="text/javascript" src="webjars/jquery/2.2.4/jquery.min.js"></script>
+
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            var jPM = $.jPanelMenu({
+                menu: 'header.main nav',
+                animated: true
+            });
+            jPM.on();
+            jPM.open();
+            $("#refreshLog").button();
+            $("#loadingImage").hide();
+        });
+
+        $(document).on("click", "#uploadFile", function () {
+//            refreshConnectorStatus();
+        });
+
+    </script>
+
+
+</head>
+<body>
+
+    <header class="main">
+
+        <h1 class="logo"><a href="" class="ss-list">Word Analyzer</a></h1>
+        <a href="#menu" class="menu-trigger ss-icon">
+            <img class="menu_icon" src="/images/menu-list.png"/>
+        </a>
+        <span class="server-time"><span id="server-time-text"></span></span>
+        <a href="logout" class="logout-button">logout</a>
+        <nav>
+            <ul>
+                <li><a href="home">Overview</a></li>
+                <li><a href="new-words">New Words</a></li>
+                <li><a href="mastered-words">Mastered Words</a></li>
+                <li><a href="interest-words">Interest Words</a></li>
+                <li><a href="frequency-list">Frequency List</a></li>
+                <li><a href="log">Logs</a></li>
+            </ul>
+        </nav>
+    </header>
+    <div class="content" id="container">
+
+        <h2>Overview</h2>
+        <label id="refreshLog">Refresh</label> <br/><br/>
+
+        <h3>Upload your book...</h3>
+
+        <hr/>
+
+        <div id="connectivity">
+
+            <form method="POST" enctype="multipart/form-data"
+                  action="upload">
+                File to upload: <input type="file" name="file"/><br/>
+                <input type="HIDDEN" name="name" value="myFile"/>
+                <input type="submit" value="Upload"/>
+            </form>
+        </div>
+    </div>
+
+</body>
+</html>
