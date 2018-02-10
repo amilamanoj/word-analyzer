@@ -5,8 +5,9 @@
     <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
     <title>Word Analyzer</title>
 
-    <link type="text/css" href="css/trs_console.css" rel="stylesheet"/>
+    <link type="text/css" href="css/general.css" rel="stylesheet"/>
     <script type="text/javascript" src="webjars/jquery/2.2.4/jquery.min.js"></script>
+    <script type="text/javascript" src="webjars/jpanelmenu/1.2.0/jquery.jpanelmenu.js"></script>
 
     <script type="text/javascript">
         $(document).ready(function () {
@@ -16,7 +17,6 @@
             });
             jPM.on();
             jPM.open();
-            $("#analyzeButton").button();
             $("#loadingImage").hide();
         });
 
@@ -32,6 +32,7 @@
             $.get("progress", function (response) {
                 $("#status").html(response.status);
                 $("#count").html(response.progress);
+                $("#title").html(response.title);
                 sCode = response.statusCode;
             });
             setTimeout(updateProgress, 500);
@@ -44,6 +45,23 @@
 </head>
 <body>
 
+<header class="main">
+    <h1 class="logo"><a href="" class="ss-list">Word Analyzer</a></h1>
+    <a href="#menu" class="menu-trigger ss-icon">
+        <img class="menu_icon" src="/images/menu-list.png"/>
+    </a>
+    <span class="server-time"><span id="server-time-text"></span></span>
+    <a href="logout" class="logout-button">logout</a>
+    <nav>
+        <ul>
+            <li><a href="home">Overview</a></li>
+            <li><a href="new-words">New Words</a></li>
+            <li><a href="mastered-words">Mastered Words</a></li>
+            <li><a href="interest-words">Interest Words</a></li>
+            <li><a href="frequency-list">Frequency List</a></li>
+        </ul>
+    </nav>
+</header>
 
 <div class="content" id="container">
 
@@ -58,7 +76,7 @@
             <tr>
                 <td style="width: 100px">Title</td>
                 <td>
-                    <div id="title">${pageScope.title}</div>
+                    <div id="title"></div>
                 </td>
             </tr>
             <tr>

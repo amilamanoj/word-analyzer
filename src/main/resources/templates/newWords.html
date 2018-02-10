@@ -4,10 +4,12 @@
 <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
 <title>Word Analyzer</title>
 
-    <link type="text/css" href="css/trs_console.css" rel="stylesheet"/>
+    <link type="text/css" href="css/general.css" rel="stylesheet"/>
+    <link type="text/css" href="css/datatable.css" rel="stylesheet"/>
     <script type="text/javascript" src="webjars/jquery/2.2.4/jquery.min.js"></script>
+    <script type="text/javascript" src="webjars/jpanelmenu/1.2.0/jquery.jpanelmenu.js"></script>
 
-<script type="text/javascript" src="${pageContext.request.contextPath}/resources/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="webjars/datatables/1.10.16/js/jquery.dataTables.js"></script>
 
 
 <script type="text/javascript">
@@ -19,9 +21,6 @@
         jPM.on();
         $("#loadingImage").hide();
         $("#subtitle").html("Messages of Session")
-    });
-    $(function () {
-        $("#refresh").button();
     });
 
     $(document).on("click", "#refresh", function () {

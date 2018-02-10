@@ -11,7 +11,6 @@ import de.tudarmstadt.ukp.jwktl.api.util.ILanguage;
 import de.tudarmstadt.ukp.jwktl.api.util.Language;
 import org.amila.wordanalyzer.beans.*;
 import org.amila.wordanalyzer.nlp.Inflector;
-import org.amila.wordanalyzer.nlp.StanfordLemmatizer;
 
 import java.io.*;
 import java.net.URISyntaxException;
@@ -29,7 +28,7 @@ public class Analyzer {
     private static final boolean FILTER_BY_DICTIONARY_WORD = true;
     private static final boolean ONLY_NOUNS = false;
     private static final boolean TOLOWERCASE = true;
-    private static final boolean LEMMATIZE = true;
+    private static final boolean LEMMATIZE = false;
     private static final boolean SHORTEN = true;
     private  String defaultFileLoc;
     public static final String MASTERED_LIST_TXT = "masteredWordList.txt";
@@ -109,11 +108,11 @@ public class Analyzer {
 
         String[] words;
         if (LEMMATIZE) {
-            StanfordLemmatizer slem = new StanfordLemmatizer();
+//            StanfordLemmatizer slem = new StanfordLemmatizer();
             // getting lemma of each word. this singularize the word. makes the word present tense, etc
             // sometimes this does not get the base word. for example: adverbs (quietly) and some past tense (worried)
-            List<String> list = slem.lemmatize(text);
-            words = list.toArray(new String[list.size()]);
+//            List<String> list = slem.lemmatize(text);
+//            words = list.toArray(new String[list.size()]);
         } else {
             text = text.replaceAll("\\r", "");
 //        String[] words = text.split(" ");
