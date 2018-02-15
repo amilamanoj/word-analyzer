@@ -68,6 +68,31 @@
             } );
         } );
 
+        $('#button-filter-article').click(function (e) {
+            e.preventDefault();
+            table.column(3).search("^((?!ARTICLE).)*$", true, false, true).draw();
+        });
+
+        $('#button-filter-pronoun').click(function (e) {
+            e.preventDefault();
+            table.column(3).search("^((?!PRONOUN).)*$", true, false, true).draw();
+        });
+
+        $('#button-filter-preposition').click(function (e) {
+            e.preventDefault();
+            table.column(3).search("^((?!PREPOSITION).)*$", true, false, true).draw();
+        });
+
+        $('#button-filter-adverb').click(function (e) {
+            e.preventDefault();
+            table.column(3).search("^((?!ADVERB).)*$", true, false, true).draw();
+        });
+
+        $('#button-filter-clear').click(function (e) {
+            e.preventDefault();
+            table.column(3).search("").draw();
+        });
+
 
 //        if close button is clicked
         $('.window .close').click(function (e) {
@@ -258,8 +283,12 @@
 <div class="content" id="container" style="width: 98%; margin: auto">
 
     <br/>
+    <button id="button-filter-article" type="button" class="btn btn-primary">Hide Articles</button>
+    <button id="button-filter-pronoun" type="button" class="btn btn-primary">Hide Pronouns</button>
+    <button id="button-filter-preposition" type="button" class="btn btn-primary">Hide Prepositions</button>
+    <button id="button-filter-adverb" type="button" class="btn btn-primary">Hide Adverbs</button>
+    <button id="button-filter-clear" type="button" class="btn btn-primary">Clear filers</button>
     <br/>
-    <label id="refresh">Refresh</label>
 
     <div id="message_info">
 

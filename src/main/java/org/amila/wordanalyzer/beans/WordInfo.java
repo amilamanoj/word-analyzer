@@ -129,7 +129,7 @@ public class WordInfo {
         String partOfS = "";
         if (partOfSpeechSet != null && !partOfSpeechSet.isEmpty()) {
             for (PartOfSpeech pos : partOfSpeechSet) {
-                partOfS = partOfS + pos.toString() + " ";
+                partOfS = partOfS + "#" + pos.toString() + " ";
             }
         }
         return partOfS;
