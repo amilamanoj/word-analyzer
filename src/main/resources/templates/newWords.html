@@ -4,12 +4,11 @@
 <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
 <title>Word Analyzer</title>
 
-    <link type="text/css" href="css/general.css" rel="stylesheet"/>
-    <link type="text/css" href="css/datatable.css" rel="stylesheet"/>
     <script type="text/javascript" src="webjars/jquery/2.2.4/jquery.min.js"></script>
     <script type="text/javascript" src="webjars/jpanelmenu/1.2.0/jquery.jpanelmenu.js"></script>
 
     <script type="text/javascript" src="webjars/datatables/1.10.16/js/jquery.dataTables.js"></script>
+    <link type="text/css" href="webjars/datatables/1.10.16/css/dataTables.jqueryui.min.css" rel="stylesheet"/>
 
 
 <script type="text/javascript">
@@ -23,9 +22,6 @@
         $("#subtitle").html("Messages of Session")
     });
 
-    $(document).on("click", "#refresh", function () {
-        refreshMessages("newWords");
-    });
 
 </script>
 
@@ -34,7 +30,7 @@
     var reqUrl = "newWords";
 
     $(document).ready(function () {
-        var $lmTable = $("#information").dataTable({
+        var table = $("#information").DataTable({
             "sPaginationType": "full_numbers",
             "sScrollX": "1000px",
             "sScrollY": calcDataTableHeight(),
@@ -59,36 +55,18 @@
             ]
         });
 
-        var $searchBar = $("tfoot input");
+        // Apply the search
+        table.columns().every( function () {
+            var that = this;
 
-        $searchBar.keyup(function () {
-            /* Filter on the column (the index) of this element */
-            $lmTable.fnFilter(this.value, $("tfoot input").index(this));
-        });
-
-
-        var asInitVals = [];
-        /*
-         * Support functions to provide a little bit of 'user friendlyness' to the textboxes in
-         * the footer
-         */
-        $searchBar.each(function (i) {
-            asInitVals[i] = this.value;
-        });
-
-        $searchBar.focus(function () {
-            if (this.className == "search_init") {
-                this.className = "";
-                this.value = "";
-            }
-        });
-
-        $searchBar.blur(function (i) {
-            if (this.value == "") {
-                this.className = "search_init";
-                this.value = asInitVals[$("tfoot input").index(this)];
-            }
-        });
+            $( 'input', this.footer() ).on( 'keyup change', function () {
+                if ( that.search() !== this.value ) {
+                    that
+                        .search( this.value )
+                        .draw();
+                }
+            } );
+        } );
 
 
 //        if close button is clicked
@@ -110,8 +88,8 @@
             $.get("addToMastered", {word: $('#wordLabel').text()}, function (res) {
                 $('#mask').hide();
                 $('.window').hide();
-                $lmTable = $("#information").dataTable();
-                $lmTable.row('.selected').remove().draw(false);
+                table = $("#information").dataTable();
+                table.row('.selected').remove().draw(false);
             });
 
         });
@@ -120,8 +98,8 @@
             $.get("addToInterest", {word: $('#wordLabel').text()}, function (res) {
                 $('#mask').hide();
                 $('.window').hide();
-                $lmTable = $("#information").dataTable();
-                $lmTable.row('.selected').remove().draw(false);
+                table = $("#information").dataTable();
+                table.row('.selected').remove().draw(false);
             });
 
         });
@@ -142,7 +120,6 @@
         });
 
         refreshMessages(reqUrl);
-//        refreshTime();
 
     });
 
@@ -287,10 +264,10 @@
     <div id="message_info">
 
         <div id="loadingImage" align="center">
-            <img src="${pageContext.request.contextPath}/resources/images/ajax-loader.gif" alt="Loading..."/>
+            <img src="image/ajax-loader.gif" alt="Loading..."/>
         </div>
 
-        <table id="information" class="display">
+        <table id="information" class="display stripe">
             <thead>
             <tr>
                 <th>FREQUENCY</th>
