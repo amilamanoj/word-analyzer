@@ -192,9 +192,20 @@
         $(this).addClass('selected');
         var msgWindow = $('#dialog');
         $('#requestText').html("Loading word...");
+        $('#exampleText').html("Loading examples...");
         $('#wordLabel').html(aData.word);
         $.get("word", {word: aData.word}, function (res) {
             $('#requestText').html(res);
+            var box = $('#boxes .window');
+            //Get the window height and width
+            var winH = $(window).height();
+            var winW = $(window).width();
+            //Set the popup window to center
+            $(box).css('top', winH / 2 - $(msgWindow).height() / 2);
+            $(box).css('left', winW / 2 - $(msgWindow).width() / 2);
+        });
+        $.get("example", {word: aData.word}, function (res) {
+            $('#exampleText').html(res);
             var box = $('#boxes .window');
             //Get the window height and width
             var winH = $(window).height();
@@ -333,10 +344,21 @@
         <div id="dialog" class="window">
             <table>
                 <tr>
+                    <td>Meaning:</td>
+                </tr>
+                <tr>
                     <td style="vertical-align:top;">
                         Word: <label id="wordLabel"></label>
                         <br/>
-                        <pre><div id="requestText" style="height:500px;width:800px;overflow:auto"></div></pre>
+                        <div id="requestText" style="font-family:monospace;border-style:inset;min-height:100px;width:800px;overflow:auto"></div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Examples from text:</td>
+                </tr>
+                <tr>
+                    <td>
+                        <div id="exampleText" style="font-family:monospace;border-style:inset;"></div>
                     </td>
                 </tr>
             </table>

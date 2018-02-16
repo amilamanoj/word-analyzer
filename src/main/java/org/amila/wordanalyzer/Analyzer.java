@@ -16,6 +16,7 @@ import java.io.*;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by Amila on 7/27/2014.
@@ -27,7 +28,7 @@ public class Analyzer {
     //    private static final boolean FILTER_BY_MASTERED = true;
     private static final boolean FILTER_BY_DICTIONARY_WORD = true;
     private static final boolean ONLY_NOUNS = false;
-    private static final boolean TOLOWERCASE = true;
+    private static final boolean TOLOWERCASE = false;
     private static final boolean LEMMATIZE = false;
     private static final boolean SHORTEN = true;
     private  String defaultFileLoc;
@@ -195,6 +196,25 @@ public class Analyzer {
 
         System.out.println(jobInfo);
         jobInfo.setStatusCode(2);
+    }
+
+    public String getExampleSentence(String word_re) {
+        List<String> allMatches = new ArrayList<String>();
+
+        word_re = "[^.]*\\b(" + word_re + ")\\b[^.]*[.]";
+        Pattern re = Pattern.compile(word_re,
+                Pattern.MULTILINE | Pattern.COMMENTS | Pattern.CASE_INSENSITIVE);
+        Matcher match = re.matcher(text);
+        while (match.find() && allMatches.size() < 10) {
+            allMatches.add(match.group());
+        }
+        StringBuilder res = new StringBuilder();
+        res.append("<ol>");
+        for (String line : allMatches) {
+            res.append("<li>").append(line).append("</li>");
+        }
+        res.append("</ol>");
+        return res.toString();
     }
 
     private void initialize() throws IOException {

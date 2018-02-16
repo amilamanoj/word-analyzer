@@ -131,6 +131,16 @@ public class ConsoleDataController {
         return analyzer.getWordDetails(word);
     }
 
+    @RequestMapping(value = "example", method = RequestMethod.GET,
+            produces = "text/html; charset=utf-8")
+    public
+    @ResponseBody
+    String getExample(HttpSession session, @RequestParam("word") String word) {
+
+        Analyzer analyzer = (Analyzer) session.getAttribute("analyzer");
+        return analyzer.getExampleSentence(word);
+    }
+
     @RequestMapping(value = "addToMastered", method = RequestMethod.GET,
             produces = "text/html; charset=utf-8")
     public
