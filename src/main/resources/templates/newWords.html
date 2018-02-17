@@ -68,25 +68,48 @@
             } );
         } );
 
-        $('#button-filter-article').click(function (e) {
-            e.preventDefault();
-            table.column(3).search("^((?!ARTICLE).)*$", true, false, true).draw();
+        $('.checkbox-filters').click(function (e) {
+            var filter = "";
+
+            if ($('#button-filter-article').is(':checked')) {
+                if (filter) {
+                    filter = filter + "|";
+                }
+                filter = filter + "ARTICLE";
+            }
+            if ($('#button-filter-pronoun').is(':checked')) {
+                if (filter) {
+                    filter = filter + "|";
+                }
+                filter = filter + "PRONOUN";
+            }
+            if ($('#button-filter-preposition').is(':checked')) {
+                if (filter) {
+                    filter = filter + "|";
+                }
+                filter = filter + "PREPOSITION";
+            }
+            if ($('#button-filter-adverb').is(':checked')) {
+                if (filter) {
+                    filter = filter + "|";
+                }
+                filter = filter + "ADVERB";
+            }
+            if ($('#button-filter-conjunction').is(':checked')) {
+                if (filter) {
+                    filter = filter + "|";
+                }
+                filter = filter + "CONJUNCTION";
+            }
+
+            var filterRegex = "";
+            if (filter) {
+                filterRegex = "^((?!" + filter + ").)*$";
+            }
+            console.log(filterRegex);
+            table.column(3).search(filterRegex, true, false, true).draw();
         });
 
-        $('#button-filter-pronoun').click(function (e) {
-            e.preventDefault();
-            table.column(3).search("^((?!PRONOUN).)*$", true, false, true).draw();
-        });
-
-        $('#button-filter-preposition').click(function (e) {
-            e.preventDefault();
-            table.column(3).search("^((?!PREPOSITION).)*$", true, false, true).draw();
-        });
-
-        $('#button-filter-adverb').click(function (e) {
-            e.preventDefault();
-            table.column(3).search("^((?!ADVERB).)*$", true, false, true).draw();
-        });
 
         $('#button-filter-clear').click(function (e) {
             e.preventDefault();
@@ -294,11 +317,11 @@
 <div class="content" id="container" style="width: 98%; margin: auto">
 
     <br/>
-    <button id="button-filter-article" type="button" class="btn btn-primary">Hide Articles</button>
-    <button id="button-filter-pronoun" type="button" class="btn btn-primary">Hide Pronouns</button>
-    <button id="button-filter-preposition" type="button" class="btn btn-primary">Hide Prepositions</button>
-    <button id="button-filter-adverb" type="button" class="btn btn-primary">Hide Adverbs</button>
-    <button id="button-filter-clear" type="button" class="btn btn-primary">Clear filers</button>
+    <input id="button-filter-article" type="checkbox" class="btn btn-primary checkbox-filters"/><label for="button-filter-article">Hide Articles</label>
+    <input id="button-filter-pronoun" type="checkbox" class="btn btn-primary checkbox-filters"/><label for="button-filter-pronoun">Hide Pronouns</label>
+    <input id="button-filter-preposition" type="checkbox" class="btn btn-primary checkbox-filters"/><label for="button-filter-preposition">Hide Prepositions</label>
+    <input id="button-filter-conjunction" type="checkbox" class="btn btn-primary checkbox-filters"/><label for="button-filter-conjunction">Hide Conjunctions</label>
+    <input id="button-filter-adverb" type="checkbox" class="btn btn-primary checkbox-filters"/><label for="button-filter-adverb">Hide Adverbs</label>
     <br/>
 
     <div id="message_info">
