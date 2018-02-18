@@ -82,6 +82,7 @@ public class WordInfo {
             boolean allDated = true;
             boolean allArchaic = true;
             boolean allObsolete = true;
+            Set<String> baseWords = new HashSet<>();
 
             for (IWiktionarySense sense : entry.getSenses()) {
                 String wikiText = sense.getGloss().getText();
@@ -106,6 +107,15 @@ public class WordInfo {
                     allObsolete = false;
                 }
                 totalSenses++;
+
+                if (!templateText.isEmpty()) {
+                    String[] content = templateText.replaceAll("\\{", "")
+                            .replaceAll("}", "")
+                            .split("\\|");
+                    if (content.length > 0 && content[0].contains("form of")) {
+                        baseWords.add(content[1]);
+                    }
+                }
             }
             if (allDated) {
                 wordEntry.addAllSensesPeriod(WordEntry.Period.DATED);
@@ -115,6 +125,12 @@ public class WordInfo {
             }
             if (allObsolete) {
                 wordEntry.addAllSensesPeriod(WordEntry.Period.OBSOLETE);
+            }
+
+            if (baseWords.size() == 1) {
+                this.stem = baseWords.iterator().next();
+            } else {
+                this.stem = word;
             }
 
             entryList.add(wordEntry);

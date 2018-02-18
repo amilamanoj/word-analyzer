@@ -8,7 +8,7 @@ import java.util.List;
  * http://en.wikipedia.org/wiki/Most_common_words_in_English
  */
 public class CommonWords {
-    public static final List<String> WORDS = Arrays.asList(
+    private static final List<String> WORDS_EN = Arrays.asList(
             //CONJUNCTIONS
             "and",
             "that",
@@ -216,6 +216,36 @@ public class CommonWords {
             "shant"
 
     );
+
+    private static final List<String> WORDS_DE = Arrays.asList(
+            "sein",
+            "haben",
+            "werden",
+
+            "sollen",
+            "wollen",
+            "können",
+            "müssen",
+            "mögen",
+            "dürfen",
+
+            "sagen",
+            "sehen",
+            "gehen",
+            "fragen"
+    );
+
+    public static List<String> getCommonWords(String language) {
+        switch (language) {
+            case "eng":
+                return WORDS_EN;
+            case "deu":
+                return WORDS_DE;
+            default:
+                return WORDS_EN;
+        }
+    }
+
 
 }
 

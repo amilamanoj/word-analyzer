@@ -203,7 +203,7 @@ public class Analyzer {
 
         word_re = "[^.]*\\b(" + word_re + ")\\b[^.]*[.]";
         Pattern re = Pattern.compile(word_re,
-                Pattern.MULTILINE | Pattern.COMMENTS | Pattern.CASE_INSENSITIVE);
+                Pattern.MULTILINE | Pattern.COMMENTS );
         Matcher match = re.matcher(text);
         while (match.find() && allMatches.size() < 10) {
             allMatches.add(match.group());
@@ -269,12 +269,12 @@ public class Analyzer {
                     jobInfo.setMasteredWords(jobInfo.getMasteredWords() + 1);
                     return false;
                 }
-                wordInfo.setStem(word);
+                //wordInfo.setStem(word);
             }
 //            }
 
             if (FILTER_BY_COMMON) {
-                if (CommonWords.WORDS.contains(wordInfo.getWord())) {
+                if (CommonWords.getCommonWords(language.getCode()).contains(wordInfo.getWord())) {
                     jobInfo.setCommonWords(jobInfo.getCommonWords() + 1);
                     return false;
                 }
@@ -347,6 +347,11 @@ public class Analyzer {
             Integer rank100k = frequencyList100k.get(bean.getWord());
             if (rank100k != null && rank100k > 0) {
                 bean.setRank100k(rank100k);
+            }
+            if (CommonWords.getCommonWords(language.getCode()).contains(info.getStem())) {
+                bean.setRemarks("COMMON");
+            } else {
+                bean.setRemarks("NEW");
             }
             newWordList.add(bean);
         }
@@ -442,7 +447,7 @@ public class Analyzer {
                     bean.setRank(rank);
                 }
                 if (annotateMastered) {
-                    if (CommonWords.WORDS.contains(word)) {
+                    if (CommonWords.getCommonWords(language.getCode()).contains(word)) {
                         bean.setRemarks("Common");
                     } else if (mastered.contains(word)) {
                         bean.setRemarks("Mastered");
@@ -450,7 +455,7 @@ public class Analyzer {
                         bean.setRemarks("Interest");
                     } else {
                         String wordSin = Inflector.getInstance().singularize(word);
-                        if (CommonWords.WORDS.contains(wordSin)) {
+                        if (CommonWords.getCommonWords(language.getCode()).contains(wordSin)) {
                             bean.setRemarks("Common");
                         } else if (mastered.contains(wordSin)) {
                             bean.setRemarks("Mastered");

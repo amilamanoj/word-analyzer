@@ -101,12 +101,10 @@
                 }
                 filter = filter + "CONJUNCTION";
             }
-
             var filterRegex = "";
             if (filter) {
                 filterRegex = "^((?!" + filter + ").)*$";
             }
-            console.log(filterRegex);
             table.column(3).search(filterRegex, true, false, true).draw();
         });
 
