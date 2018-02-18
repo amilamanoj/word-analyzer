@@ -214,8 +214,11 @@
         var msgWindow = $('#dialog');
         $('#requestText').html("Loading word...");
         $('#exampleText').html("Loading examples...");
-        $('#wordLabel').html(aData.word);
-        $.get("word", {word: aData.word}, function (res) {
+        var cWord = aData.word;
+        var cStem = aData.stem;
+        $('#wordLabel').html(cWord);
+        $('#stemLabel').html(cStem);
+        $.get("word", {word: cWord}, function (res) {
             $('#requestText').html(res);
             var box = $('#boxes .window');
             //Get the window height and width
@@ -225,6 +228,22 @@
             $(box).css('top', winH / 2 - $(msgWindow).height() / 2);
             $(box).css('left', winW / 2 - $(msgWindow).width() / 2);
         });
+        if (cWord !== cStem) {
+            $.get("word", {word: cStem}, function (res) {
+                $('#stemRow').css('visibility', 'visible');
+                $('#stemText').html(res);
+                var box = $('#boxes .window');
+                //Get the window height and width
+                var winH = $(window).height();
+                var winW = $(window).width();
+                //Set the popup window to center
+                $(box).css('top', winH / 2 - $(msgWindow).height() / 2);
+                $(box).css('left', winW / 2 - $(msgWindow).width() / 2);
+            });
+        } else {
+            $('#stemText').html("");
+            $('#stemRow').css('visibility', 'hidden');
+        }
         $.get("example", {word: aData.word}, function (res) {
             $('#exampleText').html(res);
             var box = $('#boxes .window');
@@ -371,7 +390,14 @@
                     <td style="vertical-align:top;">
                         Word: <label id="wordLabel"></label>
                         <br/>
-                        <div id="requestText" style="font-family:monospace;border-style:inset;min-height:100px;width:800px;overflow:auto"></div>
+                        <div id="requestText" style="font-family:monospace;border-style:inset;min-width:500px;overflow:auto"></div>
+                    </td>
+                </tr>
+                <tr id="stemRow" style="visibility: hidden">
+                    <td style="vertical-align:top;">
+                        Stem: <label id="stemLabel"></label>
+                        <br/>
+                        <div id="stemText" style="font-family:monospace;border-style:inset;min-width:500px;overflow:auto"></div>
                     </td>
                 </tr>
                 <tr>
