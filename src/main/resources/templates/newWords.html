@@ -70,6 +70,7 @@
 
         $('.checkbox-filters').click(function (e) {
             var filter = "";
+            var filter2 = "";
 
             if ($('#button-filter-article').is(':checked')) {
                 if (filter) {
@@ -101,11 +102,25 @@
                 }
                 filter = filter + "CONJUNCTION";
             }
+            if ($('#button-filter-proper-noun').is(':checked')) {
+                if (filter) {
+                    filter = filter + "|";
+                }
+                filter = filter + "PROPER_NOUN";
+            }
+            if ($('#button-filter-sein-haben').is(':checked')) {
+                filter2 = "sein|haben";
+            }
             var filterRegex = "";
+            var filterRegex2 = "";
             if (filter) {
                 filterRegex = "^((?!" + filter + ").)*$";
+            }  if (filter2) {
+                filterRegex2 = "^((?!" + filter2 + ").)*$";
             }
+
             table.column(3).search(filterRegex, true, false, true).draw();
+            table.column(2).search(filterRegex2, true, false, true).draw();
         });
 
 
@@ -339,6 +354,8 @@
     <input id="button-filter-preposition" type="checkbox" class="btn btn-primary checkbox-filters"/><label for="button-filter-preposition">Hide Prepositions</label>
     <input id="button-filter-conjunction" type="checkbox" class="btn btn-primary checkbox-filters"/><label for="button-filter-conjunction">Hide Conjunctions</label>
     <input id="button-filter-adverb" type="checkbox" class="btn btn-primary checkbox-filters"/><label for="button-filter-adverb">Hide Adverbs</label>
+    <input id="button-filter-proper-noun" type="checkbox" class="btn btn-primary checkbox-filters"/><label for="button-filter-proper-noun">Hide Proper Nouns</label>
+    <input id="button-filter-sein-haben" type="checkbox" class="btn btn-primary checkbox-filters"/><label for="button-filter-sein-haben">Hide Sein/Haben</label>
     <br/>
 
     <div id="message_info">
