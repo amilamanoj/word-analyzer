@@ -11,6 +11,8 @@ import de.tudarmstadt.ukp.jwktl.api.util.ILanguage;
 import de.tudarmstadt.ukp.jwktl.api.util.Language;
 import org.amila.wordanalyzer.beans.*;
 import org.amila.wordanalyzer.nlp.Inflector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.URISyntaxException;
@@ -53,10 +55,11 @@ public class Analyzer {
     private String text;
     private boolean initialized;
     private ILanguage language;
+    private static Logger logger = LoggerFactory.getLogger(Analyzer.class);
 
 //    public static void main(String[] args) throws IOException {
 ////        String file = "./The Two Towers - J. R. R. Tolkien.txt";
-////        System.out.println("Reading file...");
+////        logger.info("Reading file...");
 ////        byte[] bytes = Files.readAllBytes(Paths.get(file));
 ////        String text = new String(bytes);
 ////        Analyzer analyzer = new Analyzer();
@@ -65,7 +68,7 @@ public class Analyzer {
 //        Analyzer analyzer = new Analyzer();
 //        List<String> inp = Files.readAllLines(Paths.get("D:\\WordAnalyzer\\count_1w.txt"), Charset.defaultCharset());
 //        List<String> out = analyzer.filterDictionaryWords(inp);
-//        System.out.println(out.size());
+//        logger.info(out.size());
 //        PrintWriter outW = new PrintWriter("D:\\WordAnalyzer\\out.txt");
 //
 //        for (String w : out) {
@@ -95,6 +98,7 @@ public class Analyzer {
                     analyze();
                 } catch (Exception e) {
                     e.printStackTrace();
+                    jobInfo.setStatus("Failed: " + e.getMessage());
                 }
             }
         }).start();
@@ -104,7 +108,7 @@ public class Analyzer {
         if (!initialized) {
             initialize();
         }
-        System.out.println("Parsing...");
+        logger.info("Parsing...");
         jobInfo.setStatus("Parsing...");
 
         String[] words;
@@ -147,13 +151,13 @@ public class Analyzer {
         }
         jobInfo.setDistinctWords(distinctWordMap.size());
 //        }
-        System.out.println("Filtering...");
+        logger.info("Filtering...");
         jobInfo.setStatus("Filtering...");
         int i = 0;
         for (WordInfo wordInfo : distinctWordMap.values()) {
             i++;
             if (i % 1000 == 0) {
-                System.out.println(i + " of " + distinctWordMap.size());
+                logger.info(i + " of " + distinctWordMap.size());
             }
             if (i % 100 == 0) {
                 jobInfo.setProgress(i);
@@ -179,22 +183,22 @@ public class Analyzer {
 
         jobInfo.setGroups(filteredWordMapGrouped.size());
 
-        System.out.println("Sorting...");
+        logger.info("Sorting...");
         jobInfo.setStatus("Sorting...");
         Collections.reverse(wordInfoListGrouped);
         Collections.sort(wordInfoList, new WordInfo.FrequencyComparator());
         jobInfo.setStatus("Completed");
         for (List<WordInfo> list : wordInfoListGrouped) {
-            System.out.println(list + "\n");
+            logger.info(list + "\n");
         }
 //        for (WordInfo wordInfo : wordInfoList) {
-//            System.out.println(wordInfo + "\n");
+//            logger.info(wordInfo + "\n");
 //        }
 
-        System.out.println("======= non dic ============");
-        System.out.println(nonDictionary);
+        logger.info("======= non dic ============");
+        logger.info(nonDictionary.toString());
 
-        System.out.println(jobInfo);
+        logger.info(jobInfo.toString());
         jobInfo.setStatusCode(2);
     }
 
@@ -217,11 +221,15 @@ public class Analyzer {
         return res.toString();
     }
 
-    private void initialize() throws IOException {
-        System.out.println("Loading Wiktionary...");
+    private void initialize() {
+        logger.info("Loading Wiktionary...");
         jobInfo.setStatus("Loading Wiktionary...");
-        wkt = JWKTL.openEdition(new File(wiktionaryDump));
-        System.out.println("Finished loading Wiktionary");
+        try {
+            wkt = JWKTL.openEdition(new File(wiktionaryDump));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load dictionary: " + e.getMessage(), e);
+        }
+        logger.info("Finished loading Wiktionary");
         jobInfo.setStatus("Loading lists...");
         List<String> top100k = new ArrayList<>(); //Files.readAllLines(Paths.get(getWordSetFilePath(ListType.TOP100K)), Charset.defaultCharset());
         int x=0;
@@ -233,7 +241,7 @@ public class Analyzer {
                 frequencyList5k.put(freqs[0], x);
             }
         }
-        System.out.println("Loading mastered list");
+        logger.info("Loading mastered list");
         interestList = new HashSet<>();//(Files.readAllLines(Paths.get(getWordSetFilePath(ListType.INTEREST)), Charset.defaultCharset()));
         mastered = new HashSet<>();//(Files.readAllLines(Paths.get(getWordSetFilePath(ListType.MASTERED)), Charset.defaultCharset()));
         knownWordList = new HashSet<>(interestList);
@@ -330,7 +338,7 @@ public class Analyzer {
     }
 
     public List<WordBean> getNewWords() {
-        System.out.println("Getting new words");
+        logger.info("Getting new words");
         long id = 0;
         List<WordBean> newWordList = new ArrayList<>();
         for (Map.Entry<String, WordInfo> entry : filteredWordMap.entrySet()) {
@@ -355,7 +363,7 @@ public class Analyzer {
             }
             newWordList.add(bean);
         }
-        System.out.println("Getting new words finished");
+        logger.info("Getting new words finished");
         return newWordList;
     }
 
@@ -507,7 +515,7 @@ public class Analyzer {
         for (String word : input) {
             i++;
             if (i%1000==0) {
-                System.out.println(i + ","+ j);
+                logger.info(i + ","+ j);
             }
 
             List<IWiktionaryEntry> entries = wkt.getEntriesForWord(word.split("\t")[0], filter);
