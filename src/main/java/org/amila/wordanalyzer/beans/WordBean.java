@@ -15,6 +15,7 @@ public class WordBean {
     int senses;
     int size;
     String stem;
+    boolean mastered = false;
 
     public String getWord() {
         return word;
@@ -103,5 +104,13 @@ public class WordBean {
 
     public void setSize(int size) {
         this.size = size;
+    }
+
+    public boolean isMastered() {
+        return mastered;
+    }
+
+    public void setMastered(boolean mastered) {
+        this.mastered = mastered;
     }
 }

@@ -12,7 +12,7 @@ import java.io.IOException;
  */
 @Controller
 @RequestMapping("/")
-public class ConsolePageController {
+public class PageController {
 
     @RequestMapping("/")
     protected String home() {

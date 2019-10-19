@@ -4,7 +4,6 @@ import de.tudarmstadt.ukp.jwktl.api.IWiktionaryEntry;
 import de.tudarmstadt.ukp.jwktl.api.IWiktionarySense;
 import de.tudarmstadt.ukp.jwktl.api.PartOfSpeech;
 import de.tudarmstadt.ukp.jwktl.api.util.ILanguage;
-import de.tudarmstadt.ukp.jwktl.api.util.Language;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -16,12 +15,12 @@ import java.util.regex.Pattern;
 public class WordInfo {
     private String word;
     private int frequency;
-    private Set<String> variations = new HashSet<String>();
+    private Set<String> textVariations = new HashSet<>();
     private List<WordEntry> entryList = new ArrayList<>();
     private Set<PartOfSpeech> partOfSpeechSet = new HashSet<>();
     //    protected static final Pattern TEMPLATE_PATTERN = Pattern.compile("\\{\\{.+?\\}\\}");
     public static final Pattern TEMPLATE_PATTERN = Pattern.compile("\\{\\{.*?\\}\\}");
-    private int totalSenses = 0;
+    private int totalWordSenses = 0;
     private String stem;
     private ILanguage language;
 
@@ -61,21 +60,25 @@ public class WordInfo {
         }
     }
 
-    public Set<String> getVariations() {
-        return variations;
+    public Set<String> getTextVariations() {
+        return textVariations;
     }
 
-    public void setVariations(Set<String> variations) {
-        this.variations = variations;
+    public void setTextVariations(Set<String> textVariations) {
+        this.textVariations = textVariations;
     }
 
     public void processEntries(List<IWiktionaryEntry> entries) {
+        totalWordSenses = 0;
         for (IWiktionaryEntry entry : entries) {
             if (entry.getWordLanguage() != language) {
                 continue;
             }
-            if (entry.getPartOfSpeech() != null) {
-                partOfSpeechSet.add(entry.getPartOfSpeech());
+
+            if ("kam".equals(word)) {
+                System.out.println("kam");
+                String un = entry.getHeader();
+                System.out.println(un);
             }
             WordEntry wordEntry = new WordEntry();
             wordEntry.setEntry(entry);
@@ -83,6 +86,7 @@ public class WordInfo {
             boolean allArchaic = true;
             boolean allObsolete = true;
             Set<String> baseWords = new HashSet<>();
+            int totalEntrySenses = 0;
 
             for (IWiktionarySense sense : entry.getSenses()) {
                 String wikiText = sense.getGloss().getText();
@@ -106,8 +110,12 @@ public class WordInfo {
                 } else {
                     allObsolete = false;
                 }
-                totalSenses++;
 
+                String plainText = sense.getGloss().getPlainText();
+                if (plainText != null && !plainText.isEmpty()) {
+                    totalEntrySenses++;
+                    totalWordSenses++;
+                }
                 if (!templateText.isEmpty()) {
                     String[] content = templateText.replaceAll("\\{", "")
                             .replaceAll("}", "")
@@ -117,6 +125,17 @@ public class WordInfo {
                     }
                 }
             }
+
+            if (entry.getPartOfSpeech() != null && totalEntrySenses > 0) {
+                partOfSpeechSet.add(entry.getPartOfSpeech());
+            } else {
+                System.out.println("No part of speech with valid senses (word, pos, sense, senseswtext: " + word
+                        + "," + entry.getPartOfSpeech()
+                        + "," + entry.getSenseCount()
+                        + "," + totalEntrySenses
+                );
+            }
+
             if (allDated) {
                 wordEntry.addAllSensesPeriod(WordEntry.Period.DATED);
             }
@@ -130,7 +149,7 @@ public class WordInfo {
             if (baseWords.size() == 1) {
                 this.stem = baseWords.iterator().next();
             } else {
-                this.stem = word;
+                this.stem = baseWords.toString();
             }
 
             entryList.add(wordEntry);
@@ -156,7 +175,7 @@ public class WordInfo {
     }
 
     public int getTotalSenses() {
-        return totalSenses;
+        return totalWordSenses;
     }
 
     public String getStem() {

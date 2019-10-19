@@ -10,12 +10,12 @@ import de.tudarmstadt.ukp.jwktl.api.filter.WiktionaryEntryFilter;
 import de.tudarmstadt.ukp.jwktl.api.util.ILanguage;
 import de.tudarmstadt.ukp.jwktl.api.util.Language;
 import org.amila.wordanalyzer.beans.*;
+import org.amila.wordanalyzer.cloud.GSheetsConnector;
 import org.amila.wordanalyzer.nlp.Inflector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.net.URISyntaxException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,25 +26,22 @@ import java.util.regex.Pattern;
 public class Analyzer {
     public static final int WORD_LENGTH = 3;
     public static final int WORD_FREQ = 1;
-    private static final boolean FILTER_BY_COMMON = true;
-    //    private static final boolean FILTER_BY_MASTERED = true;
+    private static final boolean FILTER_BY_COMMON = false;
+    private static final boolean FILTER_BY_MASTERED = false;
     private static final boolean FILTER_BY_DICTIONARY_WORD = true;
     private static final boolean ONLY_NOUNS = false;
     private static final boolean TOLOWERCASE = false;
     private static final boolean LEMMATIZE = false;
     private static final boolean SHORTEN = true;
-    private  String defaultFileLoc;
+    private String defaultFileLoc;
     public static final String MASTERED_LIST_TXT = "masteredWordList.txt";
     public static final String INTEREST_LIST = "interestWordList.txt";
-//    public static final String FREQ_LIST_5000 = "freq5000.csv";
+    //    public static final String FREQ_LIST_5000 = "freq5000.csv";
     public static final String FREQ_LIST_100k = "top100k.txt";
     private String wiktionaryDump;
-    private Map<String, WordInfo> distinctWordMap = new HashMap<String, WordInfo>();
-    private Map<Integer, List<WordInfo>> filteredWordMapGrouped = new TreeMap<>();
     private Map<String, WordInfo> filteredWordMap = new HashMap<>();
     WiktionaryEntryFilter filter = new WiktionaryEntryFilter();
     IWiktionaryEdition wkt;
-    private List<List<WordInfo>> wordInfoListGrouped;
     private Set<String> knownWordList;
     private Set<String> mastered;
     private Set<String> interestList;
@@ -104,12 +101,26 @@ public class Analyzer {
         }).start();
     }
 
-    public void analyze() throws IOException, URISyntaxException {
+    public void analyze() throws AnalyzerException {
         if (!initialized) {
             initialize();
         }
+        Map<String, WordInfo> distinctWordMap = parse();
+        filter(distinctWordMap);
+
+//        List<List<WordInfo>> wordInfoListGrouped = groupWords();
+//        sortAndPrint(wordInfoListGrouped);
+
+        logger.info(jobInfo.toString());
+        jobInfo.setStatusCode(2);
+    }
+
+
+    // this method tokenises the text, and returns a map of words and their frequencies
+    private Map<String, WordInfo> parse() {
         logger.info("Parsing...");
         jobInfo.setStatus("Parsing...");
+        Map<String, WordInfo> distinctWordMap = new HashMap<>();
 
         String[] words;
         if (LEMMATIZE) {
@@ -120,20 +131,17 @@ public class Analyzer {
 //            words = list.toArray(new String[list.size()]);
         } else {
             text = text.replaceAll("\\r", "");
-//        String[] words = text.split(" ");
-            words = text.split("\\n+|\\s|—|-");
+            words = text.split("\\n+|\\s|—|-"); //= text.split(" ");
         }
 
         jobInfo.setOriginalWords(words.length);
-//        for (String line : lines) {
-//            String[] words = line.split(" ");
         for (String word : words) {
             String tWord = word.replaceAll("[^A-Za-z]", "");
             if (TOLOWERCASE) {
                 tWord = tWord.toLowerCase();
             }
             if (SHORTEN) {
-                // this is better done at filtering, because stemming algorithms are not perfect
+                // this is better done at filtering using the dictionary, because stemming algorithms are not perfect
 //                tWord = Inflector.getInstance().singularize(tWord);
             }
 
@@ -142,15 +150,18 @@ public class Analyzer {
                 wordInfo = new WordInfo(language);
                 wordInfo.setWord(tWord);
                 wordInfo.setFrequency(1);
-                wordInfo.getVariations().add(word);
+                wordInfo.getTextVariations().add(word);
                 distinctWordMap.put(tWord, wordInfo);
             } else {
                 wordInfo.setFrequency(wordInfo.getFrequency() + 1);
-                wordInfo.getVariations().add(word);
+                wordInfo.getTextVariations().add(word);
             }
         }
         jobInfo.setDistinctWords(distinctWordMap.size());
-//        }
+        return distinctWordMap;
+    }
+
+    private void filter(Map<String, WordInfo> distinctWordMap) {
         logger.info("Filtering...");
         jobInfo.setStatus("Filtering...");
         int i = 0;
@@ -165,53 +176,50 @@ public class Analyzer {
             if (filterWord(wordInfo)) {
                 filteredWordMap.put(wordInfo.getWord(), wordInfo);
 
-                List<WordInfo> wordInfoList = filteredWordMapGrouped.get(wordInfo.getFrequency());
-                if (wordInfoList == null) {
-                    wordInfoList = new ArrayList<>();
-                    wordInfoList.add(wordInfo);
-                    filteredWordMapGrouped.put(wordInfo.getFrequency(), wordInfoList);
-                } else {
-                    wordInfoList.add(wordInfo);
-                }
             }
         }
 
         jobInfo.setAfterFilter(filteredWordMap.size());
 
-        wordInfoListGrouped = new ArrayList<>(filteredWordMapGrouped.values());
-        List<WordInfo> wordInfoList = new ArrayList<>(filteredWordMap.values());
+    }
 
+    private List<List<WordInfo>> groupWords() {
+        Map<Integer, List<WordInfo>> filteredWordMapGrouped = new TreeMap<>();
+
+        for (WordInfo wordInfo : filteredWordMap.values()) {
+            List<WordInfo> wordInfoList = filteredWordMapGrouped.get(wordInfo.getFrequency());
+            if (wordInfoList == null) {
+                wordInfoList = new ArrayList<>();
+                wordInfoList.add(wordInfo);
+                filteredWordMapGrouped.put(wordInfo.getFrequency(), wordInfoList);
+            } else {
+                wordInfoList.add(wordInfo);
+            }
+        }
         jobInfo.setGroups(filteredWordMapGrouped.size());
+        return new ArrayList<>(filteredWordMapGrouped.values());
+    }
 
+    private void sortAndPrint(List<List<WordInfo>> wordInfoListGrouped) {
         logger.info("Sorting...");
         jobInfo.setStatus("Sorting...");
         Collections.reverse(wordInfoListGrouped);
+        List<WordInfo> wordInfoList = new ArrayList<>(filteredWordMap.values());
         Collections.sort(wordInfoList, new WordInfo.FrequencyComparator());
         jobInfo.setStatus("Completed");
         for (List<WordInfo> list : wordInfoListGrouped) {
             logger.info(list + "\n");
         }
-//        for (WordInfo wordInfo : wordInfoList) {
-//            logger.info(wordInfo + "\n");
-//        }
-
+        for (WordInfo wordInfo : wordInfoList) {
+            logger.info(wordInfo + "\n");
+        }
         logger.info("======= non dic ============");
         logger.info(nonDictionary.toString());
 
-        logger.info(jobInfo.toString());
-        jobInfo.setStatusCode(2);
     }
 
     public String getExampleSentence(String word_re) {
-        List<String> allMatches = new ArrayList<String>();
-
-        word_re = "[^.]*\\b(" + word_re + ")\\b[^.]*[.]";
-        Pattern re = Pattern.compile(word_re,
-                Pattern.MULTILINE | Pattern.COMMENTS );
-        Matcher match = re.matcher(text);
-        while (match.find() && allMatches.size() < 10) {
-            allMatches.add(match.group());
-        }
+        List<String> allMatches = findExampleSentenses(word_re);
         StringBuilder res = new StringBuilder();
         res.append("<ol>");
         for (String line : allMatches) {
@@ -221,32 +229,55 @@ public class Analyzer {
         return res.toString();
     }
 
-    private void initialize() {
+    private List<String> findExampleSentenses(String word_re) {
+        List<String> allMatches = new ArrayList<>();
+
+        word_re = "[^.]*\\b(" + word_re + ")\\b[^.]*[.]";
+        Pattern re = Pattern.compile(word_re,
+                Pattern.MULTILINE | Pattern.COMMENTS);
+        Matcher match = re.matcher(text);
+        while (match.find() && allMatches.size() < 10) {
+            allMatches.add(match.group());
+        }
+        return allMatches;
+    }
+
+    private void initialize() throws AnalyzerException {
         logger.info("Loading Wiktionary...");
         jobInfo.setStatus("Loading Wiktionary...");
         try {
             wkt = JWKTL.openEdition(new File(wiktionaryDump));
         } catch (Exception e) {
-            throw new RuntimeException("Failed to load dictionary: " + e.getMessage(), e);
+            throw new AnalyzerException("Failed to load dictionary: " + e.getMessage(), e);
         }
         logger.info("Finished loading Wiktionary");
         jobInfo.setStatus("Loading lists...");
+        loadTopLists();
+        loadInterestList();
+        logger.info("Loading mastered list");
+        mastered = GSheetsConnector.getVerbs();
+        knownWordList = new HashSet<>(interestList);
+        knownWordList.addAll(mastered);
+        initialized = true;
+    }
+
+    private void loadInterestList() {
+        //interestList = (Files.readAllLines(Paths.get(getWordSetFilePath(ListType.INTEREST)), Charset.defaultCharset()));
+        interestList = new HashSet<>();
+    }
+
+    private void loadTopLists() {
+        logger.info("Loading top list");
         List<String> top100k = new ArrayList<>(); //Files.readAllLines(Paths.get(getWordSetFilePath(ListType.TOP100K)), Charset.defaultCharset());
-        int x=0;
+        int x = 0;
         for (String freqEntry : top100k) {
             x++;
             String[] freqs = freqEntry.split("\t");
             frequencyList100k.put(freqs[0], x);
-            if (x<=5000) {
+            if (x <= 5000) {
                 frequencyList5k.put(freqs[0], x);
             }
         }
-        logger.info("Loading mastered list");
-        interestList = new HashSet<>();//(Files.readAllLines(Paths.get(getWordSetFilePath(ListType.INTEREST)), Charset.defaultCharset()));
-        mastered = new HashSet<>();//(Files.readAllLines(Paths.get(getWordSetFilePath(ListType.MASTERED)), Charset.defaultCharset()));
-        knownWordList = new HashSet<>(interestList);
-        knownWordList.addAll(mastered);
-        initialized = true;
     }
 
     public JobInfo getJobInfo() {
@@ -255,31 +286,31 @@ public class Analyzer {
 
     private boolean filterWord(WordInfo wordInfo) {
         if (wordInfo.getWord().length() >= WORD_LENGTH && wordInfo.getFrequency() >= WORD_FREQ) {
-//            if (FILTER_BY_MASTERED) {
-            String word = wordInfo.getWord();
-            if (knownWordList.contains(word)) {
-                jobInfo.setMasteredWords(jobInfo.getMasteredWords() + 1);
-                return false;
-            } else if (SHORTEN) {
-                // this should be used even with stanford lemmatizer (it doesn't return base word of some words. eg: adverbs)
-                word = Inflector.getInstance().singularize(word);// buggy, eg: perhaps returns perhap.  maybe try : http://www.dzone.com/snippets/java-inflections
+            if (FILTER_BY_MASTERED) {
+                String word = wordInfo.getWord();
                 if (knownWordList.contains(word)) {
                     jobInfo.setMasteredWords(jobInfo.getMasteredWords() + 1);
                     return false;
-                }
-                // my simple shortener
-                //word = shortenWord(word);
-                // snowball nlp
+                } else if (SHORTEN) {
+                    // this should be used even with stanford lemmatizer (it doesn't return base word of some words. eg: adverbs)
+                    word = Inflector.getInstance().singularize(word);// buggy, eg: perhaps returns perhap.  maybe try : http://www.dzone.com/snippets/java-inflections
+                    if (knownWordList.contains(word)) {
+                        jobInfo.setMasteredWords(jobInfo.getMasteredWords() + 1);
+                        return false;
+                    }
+                    // my simple shortener
+                    //word = shortenWord(word);
+                    // snowball nlp
 //                nlp.setCurrent(word);
 //                nlp.stem();
 //                word = nlp.getCurrent();
-                if (knownWordList.contains(word)) {
-                    jobInfo.setMasteredWords(jobInfo.getMasteredWords() + 1);
-                    return false;
+//                if (knownWordList.contains(word)) {
+//                    jobInfo.setMasteredWords(jobInfo.getMasteredWords() + 1);
+//                    return false;
+//                }
+                    //wordInfo.setStem(word);
                 }
-                //wordInfo.setStem(word);
             }
-//            }
 
             if (FILTER_BY_COMMON) {
                 if (CommonWords.getCommonWords(language.getCode()).contains(wordInfo.getWord())) {
@@ -304,9 +335,7 @@ public class Analyzer {
             }
 
             if (ONLY_NOUNS) {
-                if (!wordInfo.getPartOfSpeechSet().contains(PartOfSpeech.NOUN)) {
-                    return false;
-                }
+                return wordInfo.getPartOfSpeechSet().contains(PartOfSpeech.NOUN);
             }
             return true;
         } else {
@@ -348,7 +377,7 @@ public class Analyzer {
             bean.setWord(info.getWord());
             bean.setFrequency(info.getFrequency());
             bean.setPartsOfSpeech(info.getPartOfSpeechCommaSeparated());
-            bean.setVariations(info.getVariations().toString());
+            bean.setVariations(info.getTextVariations().toString());
             bean.setStem(info.getStem());
             bean.setSenses(info.getTotalSenses());
             bean.setSize(info.getWord().length());
@@ -356,15 +385,20 @@ public class Analyzer {
             if (rank100k != null && rank100k > 0) {
                 bean.setRank100k(rank100k);
             }
-            if (CommonWords.getCommonWords(language.getCode()).contains(info.getStem())) {
-                bean.setRemarks("COMMON");
-            } else {
-                bean.setRemarks("NEW");
-            }
+            bean.setMastered(mastered.contains(info.getStem()));
+            setRemarks(bean, info);
             newWordList.add(bean);
         }
         logger.info("Getting new words finished");
         return newWordList;
+    }
+
+    private void setRemarks(WordBean bean, WordInfo info) {
+        if (CommonWords.getCommonWords(language.getCode()).contains(info.getStem())) {
+            bean.setRemarks("COMMON");
+        } else {
+            bean.setRemarks("NEW");
+        }
     }
 
     public String getWordDetails(String word) {
@@ -383,6 +417,7 @@ public class Analyzer {
         for (WordEntry wordEntry : wordInfo.getEntryList()) {
             IWiktionaryEntry entry = wordEntry.getEntry();
             sb.append(entry.getPartOfSpeech());
+
             sb.append(":<br/>");
             for (IWiktionarySense sense : entry.getSenses()) {
                 if (sense == null) continue;
@@ -495,6 +530,7 @@ public class Analyzer {
                 return new HashSet<>();
         }
     }
+
     public String getWordSetFilePath(ListType listType) {
         switch (listType) {
             case MASTERED:
@@ -510,16 +546,16 @@ public class Analyzer {
 
     private List<String> filterDictionaryWords(List<String> input) {
         List<String> outList = new ArrayList<>();
-        int i =0;
-        int j=0;
+        int i = 0;
+        int j = 0;
         for (String word : input) {
             i++;
-            if (i%1000==0) {
-                logger.info(i + ","+ j);
+            if (i % 1000 == 0) {
+                logger.info(i + "," + j);
             }
 
             List<IWiktionaryEntry> entries = wkt.getEntriesForWord(word.split("\t")[0], filter);
-            if (entries !=null && !entries.isEmpty() ){
+            if (entries != null && !entries.isEmpty()) {
                 j++;
                 outList.add(word);
             }
@@ -528,8 +564,15 @@ public class Analyzer {
     }
 
 
- public enum ListType {
-     MASTERED, INTEREST, TOP5K, TOP100K
- }
+    public enum ListType {
+        MASTERED, INTEREST, TOP5K, TOP100K
+    }
+
+
+    public static class AnalyzerException extends Exception {
+        public AnalyzerException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
 
 }

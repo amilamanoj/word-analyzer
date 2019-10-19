@@ -20,7 +20,7 @@ import java.net.URISyntaxException;
  */
 @Controller
 @RequestMapping("/")
-public class ConsoleDataController {
+public class DataController {
     public static final char COMMA = ',';
     public static final char QUOTATION = '\"';
     private Gson gson = new GsonBuilder()

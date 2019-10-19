@@ -48,6 +48,7 @@
                 { "mDataProp": "stem", sDefaultContent: "n/a"},
                 { "mDataProp": "partsOfSpeech", sDefaultContent: "n/a"},
                 { "mDataProp": "senses", sDefaultContent: "n/a"},
+                { "mDataProp": "mastered", sDefaultContent: "n/a"},
                 { "mDataProp": "size", sDefaultContent: "n/a"},
                 { "mDataProp": "rank100k", sDefaultContent: "n/a"},
                 { "mDataProp": "variations", sDefaultContent: "n/a"},
@@ -109,7 +110,7 @@
                 filter = filter + "PROPER_NOUN";
             }
             if ($('#button-filter-sein-haben').is(':checked')) {
-                filter2 = "sein|haben";
+                filter2 = "sein|haben|können|werden|sollen|wollen|müssen|dürfen";
             }
             var filterRegex = "";
             var filterRegex2 = "";
@@ -372,6 +373,7 @@
                 <th>STEM</th>
                 <th>PART OF SPEECH</th>
                 <th>SENSES</th>
+                <th>MASTERED</th>
                 <th>LENGTH</th>
                 <th>TOP100K NORVIG</th>
                 <th>VARIATIONS</th>
@@ -387,6 +389,7 @@
                 <th><input type="text" name="search_stm" value="Search stem" class="search_init"/></th>
                 <th><input type="text" name="search_pos" value="Search pos" class="search_init"/></th>
                 <th><input type="text" name="search_senses" value="Search senses" class="search_init"/></th>
+                <th><input type="text" name="search_mastered" value="Search mastered" class="search_init"/></th>
                 <th><input type="text" name="search_size" value="Search size" class="search_init"/></th>
                 <th><input type="text" name="search_rank100" value="Search rank100" class="search_init"/></th>
                 <th><input type="text" name="search_var" value="Search var" class="search_init"/></th>
