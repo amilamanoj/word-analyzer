@@ -9,9 +9,17 @@ import de.tudarmstadt.ukp.jwktl.api.entry.WikiString;
 import de.tudarmstadt.ukp.jwktl.api.filter.WiktionaryEntryFilter;
 import de.tudarmstadt.ukp.jwktl.api.util.ILanguage;
 import de.tudarmstadt.ukp.jwktl.api.util.Language;
+import opennlp.tools.postag.POSModel;
+import opennlp.tools.postag.POSTaggerME;
+import opennlp.tools.sentdetect.SentenceDetector;
+import opennlp.tools.sentdetect.SentenceDetectorME;
+import opennlp.tools.sentdetect.SentenceModel;
+import opennlp.tools.tokenize.Tokenizer;
+import opennlp.tools.tokenize.WhitespaceTokenizer;
 import org.amila.wordanalyzer.beans.*;
 import org.amila.wordanalyzer.cloud.GSheetsConnector;
 import org.amila.wordanalyzer.nlp.Inflector;
+import org.amila.wordanalyzer.util.AnalyzerUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +37,6 @@ public class Analyzer {
     private static final boolean FILTER_BY_COMMON = false;
     private static final boolean FILTER_BY_MASTERED = false;
     private static final boolean FILTER_BY_DICTIONARY_WORD = true;
-    private static final boolean ONLY_NOUNS = false;
     private static final boolean TOLOWERCASE = false;
     private static final boolean LEMMATIZE = false;
     private static final boolean SHORTEN = true;
@@ -40,8 +47,8 @@ public class Analyzer {
     public static final String FREQ_LIST_100k = "top100k.txt";
     private String wiktionaryDump;
     private Map<String, WordInfo> filteredWordMap = new HashMap<>();
-    WiktionaryEntryFilter filter = new WiktionaryEntryFilter();
-    IWiktionaryEdition wkt;
+    private WiktionaryEntryFilter filter = new WiktionaryEntryFilter();
+    private IWiktionaryEdition wkt;
     private Set<String> knownWordList;
     private Set<String> mastered;
     private Set<String> interestList;
@@ -53,6 +60,11 @@ public class Analyzer {
     private boolean initialized;
     private ILanguage language;
     private static Logger logger = LoggerFactory.getLogger(Analyzer.class);
+
+    private String[] sentences;
+    private List<String[]> tokensList = new ArrayList<>();
+    private List<String[]> tagsList = new ArrayList<>();
+    private List<double[]> probsList = new ArrayList<>();
 
 //    public static void main(String[] args) throws IOException {
 ////        String file = "./The Two Towers - J. R. R. Tolkien.txt";
@@ -101,65 +113,151 @@ public class Analyzer {
         }).start();
     }
 
-    public void analyze() throws AnalyzerException {
+    public void analyze() throws AnalyzerException, IOException {
         if (!initialized) {
             initialize();
         }
-        Map<String, WordInfo> distinctWordMap = parse();
+        tokensList = new ArrayList<>();
+        tagsList = new ArrayList<>();
+        probsList = new ArrayList<>();
+        logger.info("Analyzing...");
+
+        sentences = detectSentences(text);
+
+        posTag(sentences);
+
+        Map<String, WordInfo> distinctWordMap = mergeAndCount();
         filter(distinctWordMap);
 
 //        List<List<WordInfo>> wordInfoListGrouped = groupWords();
 //        sortAndPrint(wordInfoListGrouped);
 
         logger.info(jobInfo.toString());
+        jobInfo.setStatus("Finished");
         jobInfo.setStatusCode(2);
+    }
+
+    private String[] detectSentences(String text) throws IOException {
+
+        jobInfo.setStatus("Detecting sentences...");
+        InputStream modelIn = getClass().getResourceAsStream("/de-sent.bin");
+        final SentenceModel sentenceModel = new SentenceModel(modelIn);
+        modelIn.close();
+
+        SentenceDetector sentenceDetector = new SentenceDetectorME(sentenceModel);
+        return sentenceDetector.sentDetect(text);
+    }
+
+
+    private void posTag(String[] sentences) throws IOException {
+
+        final String POS_MODEL = "de-pos-maxent.bin";
+
+        try (InputStream posModelIn = new FileInputStream(POS_MODEL)) {
+            jobInfo.setStatus("Reading POS model...");
+            // loading the parts-of-speech model from stream
+            POSModel posModel = new POSModel(posModelIn);
+            // initializing the parts-of-speech tagger with model
+            POSTaggerME posTagger = new POSTaggerME(posModel);
+
+            // tokenize the content
+            jobInfo.setStatus("Tokenizing and POS tagging...");
+
+            Tokenizer tokenizer = WhitespaceTokenizer.INSTANCE;
+
+            int sentenceCount = sentences.length;
+            for (int i = 0; i < sentenceCount; i++) {
+                double progress = (double) i / sentenceCount * 100;
+                jobInfo.setStatus(progress + "% tagged");
+                String sentence = sentences[i].replaceAll("[^\\p{L}\\p{Nd}]+", " ").trim();
+                String[] tokens = tokenizer.tokenize(sentence);
+                tokensList.add(tokens);
+                // Tagger tagging the tokens
+                tagsList.add(posTagger.tag(tokens));
+                // Getting the probabilities of the tags given to the tokens
+                probsList.add(posTagger.probs());
+            }
+
+//            System.out.println("Token\t:\tTag\n---------------------------------------------");
+//            for (int i = 0; i < tokens.length; i++) {
+//                if (tags[i].startsWith("V"))
+//                    System.out.println(tokens[i] + "\t:\t" + tags[i]);
+//            }
+        }
     }
 
 
     // this method tokenises the text, and returns a map of words and their frequencies
-    private Map<String, WordInfo> parse() {
-        logger.info("Parsing...");
+    private Map<String, WordInfo> mergeAndCount() throws IOException {
         jobInfo.setStatus("Parsing...");
         Map<String, WordInfo> distinctWordMap = new HashMap<>();
 
-        String[] words;
-        if (LEMMATIZE) {
+//        if (LEMMATIZE) {
 //            StanfordLemmatizer slem = new StanfordLemmatizer();
-            // getting lemma of each word. this singularize the word. makes the word present tense, etc
-            // sometimes this does not get the base word. for example: adverbs (quietly) and some past tense (worried)
+        // getting lemma of each word. this singularize the word. makes the word present tense, etc
+        // sometimes this does not get the base word. for example: adverbs (quietly) and some past tense (worried)
 //            List<String> list = slem.lemmatize(text);
 //            words = list.toArray(new String[list.size()]);
-        } else {
-            text = text.replaceAll("\\r", "");
-            words = text.split("\\n+|\\s|—|-"); //= text.split(" ");
-        }
+//        } else {
+//            text = text.replaceAll("\\r", "");
+//            words = text.split("\\n+|\\s|—|-"); //= text.split(" ");
+//        }
 
-        jobInfo.setOriginalWords(words.length);
-        for (String word : words) {
-            String tWord = word.replaceAll("[^A-Za-z]", "");
-            if (TOLOWERCASE) {
-                tWord = tWord.toLowerCase();
-            }
-            if (SHORTEN) {
-                // this is better done at filtering using the dictionary, because stemming algorithms are not perfect
+
+//        jobInfo.setOriginalWords(tokens.length);
+        for (int x = 0; x < sentences.length; x++) {
+            String[] tokens = tokensList.get(x);
+            String[] tags = tagsList.get(x);
+            double[] probs = probsList.get(x);
+            for (int i = 0; i < tokens.length; i++) {
+                String token = tokens[i];
+                String tWord = token;
+                String tag = tags[i];
+                double prob = probs[i];
+
+                try {
+                    PartOfSpeech wktlPos = AnalyzerUtils.toWktlPos(tag);
+                } catch (Exception e) {
+                    logger.warn("Skipping non-existing POS: {} {} {} {}", token, tag, prob, e.getMessage());
+                    continue;
+                }
+
+                if (prob < 0.3) {
+                    logger.warn("Skipping low confidence word {} {} {}: ", token, tag, prob);
+                    continue;
+                }
+                if (TOLOWERCASE) {
+                    tWord = tWord.toLowerCase();
+                }
+                if (SHORTEN) {
+                    // this is better done at filtering using the dictionary, because stemming algorithms are not perfect
 //                tWord = Inflector.getInstance().singularize(tWord);
-            }
+                }
 
-            WordInfo wordInfo = distinctWordMap.get(tWord);
-            if (wordInfo == null) {
-                wordInfo = new WordInfo(language);
-                wordInfo.setWord(tWord);
-                wordInfo.setFrequency(1);
-                wordInfo.getTextVariations().add(word);
-                distinctWordMap.put(tWord, wordInfo);
-            } else {
-                wordInfo.setFrequency(wordInfo.getFrequency() + 1);
-                wordInfo.getTextVariations().add(word);
+
+                if ("wenn".equals(tWord)) {
+                    System.out.println("wenn");
+                }
+
+                WordInfo wordInfo = distinctWordMap.get(tWord);
+                if (wordInfo == null) {
+                    wordInfo = new WordInfo(language);
+                    wordInfo.setWord(tWord);
+                    wordInfo.setFrequency(1);
+                    wordInfo.getTextVariations().add(token);
+                    wordInfo.addPartOfSpeech(tag);
+                    distinctWordMap.put(tWord, wordInfo);
+                } else {
+                    wordInfo.setFrequency(wordInfo.getFrequency() + 1);
+                    wordInfo.addPartOfSpeech(tag);
+                    wordInfo.getTextVariations().add(token);
+                }
             }
         }
         jobInfo.setDistinctWords(distinctWordMap.size());
         return distinctWordMap;
     }
+
 
     private void filter(Map<String, WordInfo> distinctWordMap) {
         logger.info("Filtering...");
@@ -334,9 +432,6 @@ public class Analyzer {
                 }
             }
 
-            if (ONLY_NOUNS) {
-                return wordInfo.getPartOfSpeechSet().contains(PartOfSpeech.NOUN);
-            }
             return true;
         } else {
             return false;

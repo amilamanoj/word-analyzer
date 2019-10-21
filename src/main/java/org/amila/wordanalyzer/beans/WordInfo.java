@@ -4,6 +4,10 @@ import de.tudarmstadt.ukp.jwktl.api.IWiktionaryEntry;
 import de.tudarmstadt.ukp.jwktl.api.IWiktionarySense;
 import de.tudarmstadt.ukp.jwktl.api.PartOfSpeech;
 import de.tudarmstadt.ukp.jwktl.api.util.ILanguage;
+import org.amila.wordanalyzer.Analyzer;
+import org.amila.wordanalyzer.util.AnalyzerUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -17,12 +21,14 @@ public class WordInfo {
     private int frequency;
     private Set<String> textVariations = new HashSet<>();
     private List<WordEntry> entryList = new ArrayList<>();
-    private Set<PartOfSpeech> partOfSpeechSet = new HashSet<>();
+    private Set<PartOfSpeech> wiktionaryPartOfSpeechSet = new HashSet<>();
+    private Set<String> sttsPartOfSpeechSet = new HashSet<>();
     //    protected static final Pattern TEMPLATE_PATTERN = Pattern.compile("\\{\\{.+?\\}\\}");
     public static final Pattern TEMPLATE_PATTERN = Pattern.compile("\\{\\{.*?\\}\\}");
     private int totalWordSenses = 0;
     private String stem;
     private ILanguage language;
+    private static Logger logger = LoggerFactory.getLogger(Analyzer.class);
 
     public WordInfo(ILanguage language) {
         this.language = language;
@@ -126,15 +132,15 @@ public class WordInfo {
                 }
             }
 
-            if (entry.getPartOfSpeech() != null && totalEntrySenses > 0) {
-                partOfSpeechSet.add(entry.getPartOfSpeech());
-            } else {
-                System.out.println("No part of speech with valid senses (word, pos, sense, senseswtext: " + word
-                        + "," + entry.getPartOfSpeech()
-                        + "," + entry.getSenseCount()
-                        + "," + totalEntrySenses
-                );
-            }
+//            if (entry.getPartOfSpeech() != null && totalEntrySenses > 0) {
+//                wiktionaryPartOfSpeechSet.add(entry.getPartOfSpeech());
+//            } else {
+//                System.out.println("No part of speech with valid senses (word, pos, sense, senseswtext: " + word
+//                        + "," + entry.getPartOfSpeech()
+//                        + "," + entry.getSenseCount()
+//                        + "," + totalEntrySenses
+//                );
+//            }
 
             if (allDated) {
                 wordEntry.addAllSensesPeriod(WordEntry.Period.DATED);
@@ -149,21 +155,21 @@ public class WordInfo {
             if (baseWords.size() == 1) {
                 this.stem = baseWords.iterator().next();
             } else {
-                this.stem = baseWords.toString();
+                this.stem = word;
             }
 
             entryList.add(wordEntry);
         }
     }
 
-    public Set<PartOfSpeech> getPartOfSpeechSet() {
-        return partOfSpeechSet;
+    public Set<PartOfSpeech> getWiktionaryPartOfSpeechSet() {
+        return wiktionaryPartOfSpeechSet;
     }
 
     public String getPartOfSpeechCommaSeparated() {
         String partOfS = "";
-        if (partOfSpeechSet != null && !partOfSpeechSet.isEmpty()) {
-            for (PartOfSpeech pos : partOfSpeechSet) {
+        if (wiktionaryPartOfSpeechSet != null && !wiktionaryPartOfSpeechSet.isEmpty()) {
+            for (PartOfSpeech pos : wiktionaryPartOfSpeechSet) {
                 partOfS = partOfS + "#" + pos.toString() + " ";
             }
         }
@@ -184,5 +190,15 @@ public class WordInfo {
 
     public void setStem(String stem) {
         this.stem = stem;
+    }
+
+    public void addPartOfSpeech(String pos) {
+        try {
+            PartOfSpeech wktlPos = AnalyzerUtils.toWktlPos(pos);
+            wiktionaryPartOfSpeechSet.add(wktlPos);
+        } catch (Exception e) {
+            logger.warn(e.getMessage());
+        }
+        sttsPartOfSpeechSet.add(pos);
     }
 }
