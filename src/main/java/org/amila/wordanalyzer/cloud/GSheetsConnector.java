@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class GSheetsConnector {
     private static final String APPLICATION_NAME = "Google Sheets API Java Quickstart";
@@ -74,12 +75,27 @@ public class GSheetsConnector {
             final String spreadsheetId = "sid";
 
 //        final String range = "SheetName Data!A2:E";
-            final String range = "A7:A";
-            ValueRange response = sheetService.spreadsheets().values()
-                    .get(spreadsheetId, range)
+            final String rangeW = "Weak!A7:A";
+            ValueRange responseW = sheetService.spreadsheets().values()
+                    .get(spreadsheetId, rangeW)
                     .execute();
-            List<List<Object>> values = response.getValues();
-            return values.stream().map(e -> e.get(0).toString()).collect(Collectors.toSet());
+            List<List<Object>> valuesW = responseW.getValues();
+            Set<String> weakVerbs =  valuesW.stream().map(e -> e.get(0).toString().trim()).collect(Collectors.toSet());
+            final String rangeS = "Strong!A7:A";
+            ValueRange responseS = sheetService.spreadsheets().values()
+                    .get(spreadsheetId, rangeS)
+                    .execute();
+            List<List<Object>> valuesS = responseS.getValues();
+            Set<String> strongVerbs =  valuesS.stream().map(e -> e.get(0).toString().trim()).collect(Collectors.toSet());
+            final String rangeM = "Mixed!A7:A";
+            ValueRange responseM = sheetService.spreadsheets().values()
+                    .get(spreadsheetId, rangeM)
+                    .execute();
+            List<List<Object>> valuesM = responseM.getValues();
+            Set<String> mixedVerbs =  valuesM.stream().map(e -> e.get(0).toString().trim()).collect(Collectors.toSet());
+
+            Set<String> irregularVerbs = Stream.concat(strongVerbs.stream(), mixedVerbs.stream()).collect(Collectors.toSet());
+            return Stream.concat(weakVerbs.stream(), irregularVerbs.stream()).collect(Collectors.toSet());
         } catch (Exception e) {
             throw new Analyzer.AnalyzerException("Error retrieving mastered words", e);
         }

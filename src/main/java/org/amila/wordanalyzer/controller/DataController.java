@@ -3,6 +3,8 @@ package org.amila.wordanalyzer.controller;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.amila.wordanalyzer.Analyzer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -21,8 +23,8 @@ import java.net.URISyntaxException;
 @Controller
 @RequestMapping("/")
 public class DataController {
-    public static final char COMMA = ',';
-    public static final char QUOTATION = '\"';
+    private static Logger logger = LoggerFactory.getLogger(Analyzer.class);
+
     private Gson gson = new GsonBuilder()
             .setDateFormat("yyyy/MM/dd/ HH:mm:ss").create();
 

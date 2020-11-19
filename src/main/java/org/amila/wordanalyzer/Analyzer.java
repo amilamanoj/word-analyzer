@@ -24,6 +24,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -50,7 +54,7 @@ public class Analyzer {
     private WiktionaryEntryFilter filter = new WiktionaryEntryFilter();
     private IWiktionaryEdition wkt;
     private Set<String> knownWordList;
-    private Set<String> mastered;
+    private Set<String> mastered = new HashSet<>();
     private Set<String> interestList;
     private Map<String, Integer> frequencyList5k = new HashMap<>();
     private Map<String, Integer> frequencyList100k = new HashMap<>();
@@ -61,32 +65,51 @@ public class Analyzer {
     private ILanguage language;
     private static Logger logger = LoggerFactory.getLogger(Analyzer.class);
 
+    private boolean loadMastered = false;
+
     private String[] sentences;
     private List<String[]> tokensList = new ArrayList<>();
     private List<String[]> tagsList = new ArrayList<>();
     private List<double[]> probsList = new ArrayList<>();
 
-//    public static void main(String[] args) throws IOException {
-////        String file = "./The Two Towers - J. R. R. Tolkien.txt";
-////        logger.info("Reading file...");
-////        byte[] bytes = Files.readAllBytes(Paths.get(file));
-////        String text = new String(bytes);
-////        Analyzer analyzer = new Analyzer();
-////        analyzer.analyze();
-//
-//        Analyzer analyzer = new Analyzer();
-//        List<String> inp = Files.readAllLines(Paths.get("D:\\WordAnalyzer\\count_1w.txt"), Charset.defaultCharset());
-//        List<String> out = analyzer.filterDictionaryWords(inp);
-//        logger.info(out.size());
-//        PrintWriter outW = new PrintWriter("D:\\WordAnalyzer\\out.txt");
-//
-//        for (String w : out) {
-//            outW.append(w + System.lineSeparator() );
-//        }
-//        outW.close();
-////            Files.write(, out, Charset.defaultCharset(), null);
-//
-//    }
+    public static void main(String[] args) throws AnalyzerException, IOException {
+//        String file = "./The Two Towers - J. R. R. Tolkien.txt";
+        logger.info("Reading file...");
+        byte[] bytes = Files.readAllBytes(Paths.get("lernkrimi Mord unter den Linden.txt"));
+        String text = new String(bytes);
+        Analyzer analyzer = new Analyzer("kri", text);
+        analyzer.analyze();
+        String[] sentences = analyzer.sentences;
+        List<String[]> tokensList = analyzer.tokensList;
+        List<String[]> tagsList = analyzer.tagsList;
+        List<double[]> probsList = analyzer.probsList;
+
+        StringBuilder builder = new StringBuilder();
+        builder.append("<head><link rel=\"stylesheet\" href=\"pos.css\"></head>");
+        for (int x = 0; x < sentences.length; x++) {
+            String[] tokens = tokensList.get(x);
+            String[] tags = tagsList.get(x);
+            double[] probs = probsList.get(x);
+            for (int i = 0; i < tokens.length; i++) {
+                String token = tokens[i];
+                String tag = tags[i];
+               double prob = probs[i];
+
+//               if (prob > 0.01) {
+                   builder.append("<span class=").append(tag).append(">").append(token).append("</span>").append(" ");
+//               } else {
+//                   builder.append(token).append(" ");
+//               }
+
+            }
+            builder.append("<br/>");
+        }
+        Files.write(Paths.get("out.html"), builder.toString().getBytes(StandardCharsets.UTF_8));
+
+
+//            Files.write(, out, Charset.defaultCharset(), null);
+
+    }
 
     public Analyzer(String title, String text) throws IOException {
         Properties properties = new Properties();
@@ -168,8 +191,9 @@ public class Analyzer {
             int sentenceCount = sentences.length;
             for (int i = 0; i < sentenceCount; i++) {
                 double progress = (double) i / sentenceCount * 100;
-                jobInfo.setStatus(progress + "% tagged");
-                String sentence = sentences[i].replaceAll("[^\\p{L}\\p{Nd}]+", " ").trim();
+                jobInfo.setStatus(String.format( "%.1f", progress) + "% tagged");
+                String sentence = sentences[i].replaceAll("[^\\p{L}\\p{Nd},.\\-;\"]+", " ").trim();
+//                String sentence = sentences[i];
                 String[] tokens = tokenizer.tokenize(sentence);
                 tokensList.add(tokens);
                 // Tagger tagging the tokens
@@ -192,17 +216,8 @@ public class Analyzer {
         jobInfo.setStatus("Parsing...");
         Map<String, WordInfo> distinctWordMap = new HashMap<>();
 
-//        if (LEMMATIZE) {
-//            StanfordLemmatizer slem = new StanfordLemmatizer();
-        // getting lemma of each word. this singularize the word. makes the word present tense, etc
-        // sometimes this does not get the base word. for example: adverbs (quietly) and some past tense (worried)
-//            List<String> list = slem.lemmatize(text);
-//            words = list.toArray(new String[list.size()]);
-//        } else {
 //            text = text.replaceAll("\\r", "");
 //            words = text.split("\\n+|\\s|—|-"); //= text.split(" ");
-//        }
-
 
 //        jobInfo.setOriginalWords(tokens.length);
         for (int x = 0; x < sentences.length; x++) {
@@ -229,15 +244,10 @@ public class Analyzer {
                 if (TOLOWERCASE) {
                     tWord = tWord.toLowerCase();
                 }
-                if (SHORTEN) {
+//                if (SHORTEN) {
                     // this is better done at filtering using the dictionary, because stemming algorithms are not perfect
 //                tWord = Inflector.getInstance().singularize(tWord);
-                }
-
-
-                if ("wenn".equals(tWord)) {
-                    System.out.println("wenn");
-                }
+//                }
 
                 WordInfo wordInfo = distinctWordMap.get(tWord);
                 if (wordInfo == null) {
@@ -352,8 +362,10 @@ public class Analyzer {
         jobInfo.setStatus("Loading lists...");
         loadTopLists();
         loadInterestList();
-        logger.info("Loading mastered list");
-        mastered = GSheetsConnector.getVerbs();
+        if (loadMastered) {
+            logger.info("Loading mastered list");
+            mastered = GSheetsConnector.getVerbs();
+        }
         knownWordList = new HashSet<>(interestList);
         knownWordList.addAll(mastered);
         initialized = true;
@@ -424,7 +436,7 @@ public class Analyzer {
                     jobInfo.setNonDictionaryWords(jobInfo.getNonDictionaryWords() + 1);
                     return false;
                 }
-                wordInfo.processEntries(entries);
+                wordInfo.processEntries(entries, true);
                 if (wordInfo.getTotalSenses() == 0) {
                     nonDictionary.add(wordInfo);
                     jobInfo.setNonDictionaryWords(jobInfo.getNonDictionaryWords() + 1);
@@ -503,7 +515,7 @@ public class Analyzer {
             if (entries != null) {
                 wordInfo = new WordInfo(language);
                 wordInfo.setWord(word);
-                wordInfo.processEntries(entries);
+                wordInfo.processEntries(entries, false);
             } else {
                 return "Not found";
             }
@@ -573,7 +585,7 @@ public class Analyzer {
                 wordInfo.setWord(word);
                 List<IWiktionaryEntry> entries = wkt.getEntriesForWord(word, filter);
                 if (entries != null) {
-                    wordInfo.processEntries(entries);
+                    wordInfo.processEntries(entries, false);
                 }
                 WordBean bean = new WordBean();
                 bean.setId(id++);
